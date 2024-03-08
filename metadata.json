@@ -1,0 +1,23 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "anicaazhu@gmail.com",
+                "Name": "Kangwei Zhu"
+            }
+        ],
+        "Category": "Multimedia",
+        "Description": "[Plasma 5]A widget that could display lyrics of your spotify/yesplaymusic current-playing-song on kde panel and desktop.",
+        "Icon": "preferences-media-playback-amarok",
+        "Id": "lyrics-on-panel-plasma5",
+        "License": "MIT License",
+        "Name": "lyrics-on-panel-plasma5",
+        "ServiceTypes": [
+            "Plasma/Applet"
+        ],
+        "Version": "1.0",
+        "Website": "https://github.com/KangweiZhu/lyrics-on-panel"
+    },
+    "X-Plasma-API": "declarativeappletscript",
+    "X-Plasma-MainScript": "ui/main.qml"
+}
