@@ -13,11 +13,11 @@ Item {
         interval: 1 //how rapid it is.
 
         onConnectedSourcesChanged: {
-            console.log("changed")
-            previousMediaTitle = ""
-            previousMediaArtists = "" 
-            prevNonEmptyLyric = ""
-            previousLrcId = ""
+            currentMediaYPMId = "";
+            previousMediaTitle = "";
+            previousMediaArtists = ""; 
+            prevNonEmptyLyric = "";
+            previousLrcId = "";
             queryFailed = false;
         }
 
@@ -49,6 +49,55 @@ Item {
         horizontalAlignment: Text.AlignHCenter  
     }
 
+    Timer {
+        id: schedulerTimer
+        interval: 1000
+        running: true
+        repeat: true
+        onTriggered: {
+            console.log(JSON.stringify(mpris2Source));
+            if (config_compatibleModeChecked || config_spotifyChecked) {
+                yesPlayMusicTimer.stop();
+                compatibleModeTimer.start();
+            } else {
+                compatibleModeTimer.stop();
+                yesPlayMusicTimer.start();
+            } 
+        }
+    }
+
+    Timer {
+        id: yesPlayMusicTimer
+        interval: 1000
+        running: false
+        repeat: true
+        onTriggered: {
+            compatibleModeTimer.stop();
+            if (currentMediaArtists === "No artists" && currentMediaTitle === "No title") {
+                lyricText.text = "";
+                lyricsWTimes.clear();
+            } else {
+                fetchMediaIdYPM();  
+            }
+        }
+    }
+
+    // compatible mode timer
+    Timer {
+        id: compatibleModeTimer
+        interval: 1000
+        running: false
+        repeat: true
+        onTriggered: {
+            if (currentMediaArtists === "No artists" && currentMediaTitle === "No title") {
+                lyricText.text = "";
+                lyricsWTimes.clear();
+            } else {
+                fetchLyricsCompatibleMode();
+            }
+        }
+    }
+
     // config page variable
     property bool config_yesPlayMusicChecked: Plasmoid.configuration.yesPlayMusicChecked;
     property bool config_spotifyChecked: Plasmoid.configuration.spotifyChecked;
@@ -63,11 +112,11 @@ Item {
     // spotify: only spotify's lyric
     // multiplex: global mode, depend on the current playing media. (Also priority dependent).
     property string mode: {
-        if (config_yesPlayMusicChecked) {
-            return "yesplaymusic";
+        if (config_yesPlayMusicChecked) { //[BUG FIXED]动态更新源，解决 多个媒体源存在于datasource时，yesplaymusic退出后重进，datasource没法更新的问题。spoity依旧unfixed.都是客户端自身的缺陷。
+            return mpris2Source.data["@multiplex"].Identity === "YesPlayMusic" ? "@multiplex" : "yesplaymusic"; 
         } 
         if (config_spotifyChecked) {
-            return "spotify";
+            return "spotify"; 
         }
         if (config_compatibleModeChecked) {
             return "@multiplex";
@@ -83,11 +132,6 @@ Item {
     // Global constant
     readonly property string ypm_base_url: "http://localhost:27232"
     readonly property string lrclib_base_url: "https://lrclib.net"
-    
-    //YesPlayMusic mpris2 data
-    //property var ypmMetaData: mpris2Source ? mpris2Source.ypmSourceKey.Metadata : undefined
-    //property var ypmData: mpris2Source.ypmSourceKey
-    //property int ypmSongTimeMS: ypmData ? Math.floor(ypmData.Position / 1000) : -1;
 
     //Other Media Player's mpris2 data
     property var compatibleMetaData: mpris2Source ? mpris2Source.data[mode].Metadata : undefined
@@ -116,7 +160,7 @@ Item {
         if (compatibleData && compatibleMetaData["xesam:title"]) {
             return compatibleMetaData["xesam:title"];
         } else {
-            return i18n("No media playing right now")
+            return "No title";
         }
     }
 
@@ -125,7 +169,7 @@ Item {
         if (compatibleData && compatibleMetaData["xesam:artist"]) {
             return compatibleMetaData["xesam:artist"].toString();
         } else {
-            return i18n("Unknown Artists")
+            return "No artists";
         }
     }
 
@@ -134,7 +178,7 @@ Item {
         if (compatibleData && compatibleMetaData["xesam:album"]) {
             return compatibleMetaData["xesam:album"];
         } else {
-            return i18n("No album name for current media")
+            return "No Album";
         }
     }
 
@@ -160,46 +204,6 @@ Item {
             return "This song doesn't have any lyric";
         }
     }
-
-    Timer {
-        id: yesPlayMusicTimer
-        interval: 1000
-        running: false
-        repeat: true
-        onTriggered: {
-            compatibleModeTimer.stop();
-            fetchMediaIdYPM();
-        }
-    }
-
-    // compatible mode timer
-    Timer {
-        id: compatibleModeTimer
-        interval: 1000
-        running: true
-        repeat: true
-        onTriggered: {
-            yesPlayMusicTimer.stop();
-            console.log(JSON.stringify(compatibleData));
-            //console.log("sourcekey", JSON.stringify(multiplexSourceKey));
-            //console.log(JSON.stringify(mpris2Source.data["spotify"]));
-            debugLog();
-            console.log("queryFailed: ", queryFailed);
-            fetchLyricsCompatibleMode();
-        }
-    }
-
-    // Timer {
-    //     id: attemptReconnect
-    //     interval: 5000
-    //     running: true
-    //     repeat: true
-    //     onTriggered: {
-    //         if (queryFailed) {
-    //             queryFailed = false;
-    //         }
-    //     }
-    // }
 
     // [Feature haven't been implemented]
     // Case: When we are unable to find the correspond lyric via lrclib api while we are listening to the music from YESPLAYMUSIC(YPM). 
@@ -230,7 +234,10 @@ Item {
             if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
                 if (xhr.responseText) {
                     var response = JSON.parse(xhr.responseText);
-                    if (response && response.currentTrack && response.currentTrack.name === currentMediaTitle) {
+                    if (response && response.currentTrack && response.currentTrack.name === currentMediaTitle && (previousMediaArtists !== currentMediaArtists || previousMediaTitle !== currentMediaTitle)) {
+                        previousMediaTitle = currentMediaTitle;
+                        previousMediaArtists = currentMediaArtists;
+                        currentMediaYPMId = response.currentTrack.id;
                         fetchSyncLyricYPM();
                     }
                 }
@@ -243,10 +250,12 @@ Item {
     function fetchSyncLyricYPM() {
         var xhr = new XMLHttpRequest();
         xhr.open("GET", ypm_base_url + "/api/lyric?id=" + currentMediaYPMId);
-        xhr.onreadystateclrc_not_existshange = function() {
-            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+        xhr.onreadystatechange = function() {
+            if (xhr.status === 200) {
                 var response = JSON.parse(xhr.responseText);
                 if (response && response.lrc && response.lrc.lyric) {
+                    lyricsWTimes.clear();
+                    parseLyric(response.lrc.lyric);
                     //parseAndUpload(response.lrc.lyric);
                 }
             }
@@ -268,7 +277,6 @@ Item {
             if (lyricPerRowWTime.length > 1) {
                 var timestamp = parseTime(lyricPerRowWTime[0].replace("[", "").trim());
                 var lyricPerRow = lyricPerRowWTime[1].trim();
-                console.log("entered");
                 lyricsWTimes.append({time: timestamp, lyric: lyricPerRow});
             }
         }
@@ -281,9 +289,8 @@ Item {
 
         xhr.onreadystatechange = function() {
             if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-                if ((currentMediaTitle !== "Advertisement") && (previousMediaArtists !== currentMediaArtists || previousMediaTitle !== currentMediaTitle) ) { //Advertisement
+                if ((currentMediaTitle !== "Advertisement") && (previousMediaArtists !== currentMediaArtists || previousMediaTitle !== currentMediaTitle)) { //Advertisement
                     if (!xhr.responseText || xhr.responseText === "[]") {
-                        console.log("entered");
                         queryFailed = true;
                         previousLrcId = Number.MIN_VALUE;
                         lyricsWTimes.clear();
@@ -340,7 +347,7 @@ Item {
 
     Timer {
         id: lyricDisplayTimer
-        interval: 1000
+        interval: 1
         running: true
         repeat: true
         onTriggered: { 
@@ -349,19 +356,12 @@ Item {
             } else {
                 currentSongTime = compatibleSongTimeMS / 1000;
                 previousSongTimeMS = compatibleSongTimeMS;
-                //console.log(globalLyrics);
                 for (let i = 0; i < lyricsWTimes.count; i++) {
                     if (lyricsWTimes.get(i).time >= currentSongTime) {
-                        console.log("lyricWTimes", lyricsWTimes.get(i).time);
-                        console.log("curentSongTime", currentSongTime)
-                        console.log("compatibleSongTimeMS", compatibleSongTimeMS);
                         currentLyricIndex = i > 0 ? i - 1 : 0;
-                        console.log("currentLyricIndex", currentLyricIndex);
                         if (lyricsWTimes.get(currentLyricIndex).lyric === "" || !lyricsWTimes.get(currentLyricIndex).lyric) {
-                            console.log("entered 1");
                             lyricText.text = prevNonEmptyLyric;
                         } else {
-                            console.log("entered 2")
                             var lyric = lyricsWTimes.get(currentLyricIndex).lyric;
                             lyricText.text = lyric;
                             prevNonEmptyLyric = lyric;
