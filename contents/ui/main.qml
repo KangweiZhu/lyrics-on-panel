@@ -4,18 +4,21 @@ import QtQuick.Layouts 1.1
 import org.kde.plasma.core 2.0 as PlasmaCore
 import org.kde.plasma.plasmoid 2.0
 
-Item {
+Item { 
     // connect to mpris2 source
     PlasmaCore.DataSource {
         id: mpris2Source
         engine: "mpris2"
         connectedSources: sources
-        readonly property var multiplexSourceKey: data[mode]
         interval: 1 //how rapid it is.
 
-        // immediately do some ops after connected
         onConnectedSourcesChanged: {
-           
+            console.log("changed")
+            previousMediaTitle = ""
+            previousMediaArtists = "" 
+            prevNonEmptyLyric = ""
+            previousLrcId = ""
+            queryFailed = false;
         }
 
         // triggered when there is a change in data. Prefect place for debugging
@@ -87,8 +90,8 @@ Item {
     //property int ypmSongTimeMS: ypmData ? Math.floor(ypmData.Position / 1000) : -1;
 
     //Other Media Player's mpris2 data
-    property var compatibleMetaData: mpris2Source ? mpris2Source.multiplexSourceKey.Metadata : undefined
-    property var compatibleData: mpris2Source.multiplexSourceKey
+    property var compatibleMetaData: mpris2Source ? mpris2Source.data[mode].Metadata : undefined
+    property var compatibleData: mpris2Source.data[mode]
     property int compatibleSongTimeMS:compatibleData ? Math.floor(compatibleData.Position / 1000) : -1
 
     //YesPlayMusic only, don't be misleaded. We can use ypm_base_url + /api/currentMediaYPMId to get lyrics of the current playing song, then upload it to lrclib
@@ -105,8 +108,8 @@ Item {
     property string previousLrcId: ""
     property string previousGlobalLrc: ""
     property bool queryFailed: false;
-    property int freezeCounter: 0;
     property real previousSongTimeMS: 0
+    property var globalLyrics;
 
     // title of current media
     property string currentMediaTitle: {
@@ -177,11 +180,26 @@ Item {
         repeat: true
         onTriggered: {
             yesPlayMusicTimer.stop();
+            console.log(JSON.stringify(compatibleData));
+            //console.log("sourcekey", JSON.stringify(multiplexSourceKey));
+            //console.log(JSON.stringify(mpris2Source.data["spotify"]));
             debugLog();
-            console.log(queryFailed);
+            console.log("queryFailed: ", queryFailed);
             fetchLyricsCompatibleMode();
         }
     }
+
+    // Timer {
+    //     id: attemptReconnect
+    //     interval: 5000
+    //     running: true
+    //     repeat: true
+    //     onTriggered: {
+    //         if (queryFailed) {
+    //             queryFailed = false;
+    //         }
+    //     }
+    // }
 
     // [Feature haven't been implemented]
     // Case: When we are unable to find the correspond lyric via lrclib api while we are listening to the music from YESPLAYMUSIC(YPM). 
@@ -225,7 +243,7 @@ Item {
     function fetchSyncLyricYPM() {
         var xhr = new XMLHttpRequest();
         xhr.open("GET", ypm_base_url + "/api/lyric?id=" + currentMediaYPMId);
-        xhr.onreadystatechange = function() {
+        xhr.onreadystateclrc_not_existshange = function() {
             if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
                 var response = JSON.parse(xhr.responseText);
                 if (response && response.lrc && response.lrc.lyric) {
@@ -250,6 +268,7 @@ Item {
             if (lyricPerRowWTime.length > 1) {
                 var timestamp = parseTime(lyricPerRowWTime[0].replace("[", "").trim());
                 var lyricPerRow = lyricPerRowWTime[1].trim();
+                console.log("entered");
                 lyricsWTimes.append({time: timestamp, lyric: lyricPerRow});
             }
         }
@@ -277,6 +296,7 @@ Item {
                             previousMediaTitle = currentMediaTitle;
                             previousMediaArtists = currentMediaArtists;
                             previousLrcId = response[0].id.toString();
+                            //globalLyrics = response[0].syncedLyrics; //debug use
                             parseLyric(response[0].syncedLyrics);
                         } else {
                             lyricsWTimes.clear();
@@ -318,46 +338,36 @@ Item {
         console.log("previous artist: ", previousMediaArtists);
     }
 
-    // Timer {
-    //     id: reconnectTimer
-    //     interval: 500
-    //     running: true
-    //     repeat: true
-    //     onTriggered: {
-    //         if (!mpris2Source.data["spotify"] || !compatibleData) {
-    //             mpris2Source.disconnectSource("sources");
-    //             mpris2Source.connectSource("sources");
-    //         }
-    //     }
-    // }
-
     Timer {
         id: lyricDisplayTimer
-        interval: 1
+        interval: 1000
         running: true
         repeat: true
         onTriggered: { 
-            //console.log(JSON.stringify(mpris2Source.multiplexSourceKey));
-            currentSongTime = compatibleSongTimeMS / 1000;
-            previousSongTimeMS = compatibleSongTimeMS;
-            //console.log(globalLyrics);
-            for (let i = 0; i < lyricsWTimes.count; i++) {
-                if (lyricsWTimes.get(i).time >= currentSongTime) {
-                    console.log("lyricWTimes", lyricsWTimes.get(i).time);
-                    console.log("curentSongTime", currentSongTime)
-                    console.log("compatibleSongTimeMS", compatibleSongTimeMS);
-                    currentLyricIndex = i > 0 ? i - 1 : 0;
-                    console.log("currentLyricIndex", currentLyricIndex);
-                    if (lyricsWTimes.get(currentLyricIndex).lyric === "" || !lyricsWTimes.get(currentLyricIndex).lyric) {
-                        console.log("entered 1");
-                        lyricText.text = prevNonEmptyLyric;
-                    } else {
-                        console.log("entered 2")
-                        var lyric = lyricsWTimes.get(currentLyricIndex).lyric;
-                        lyricText.text = lyric;
-                        prevNonEmptyLyric = lyric;
+            if (currentMediaTitle === "Advertisement") { //aim to solve Spotify non-premium bug report
+                lyricText.text = currentMediaTitle;
+            } else {
+                currentSongTime = compatibleSongTimeMS / 1000;
+                previousSongTimeMS = compatibleSongTimeMS;
+                //console.log(globalLyrics);
+                for (let i = 0; i < lyricsWTimes.count; i++) {
+                    if (lyricsWTimes.get(i).time >= currentSongTime) {
+                        console.log("lyricWTimes", lyricsWTimes.get(i).time);
+                        console.log("curentSongTime", currentSongTime)
+                        console.log("compatibleSongTimeMS", compatibleSongTimeMS);
+                        currentLyricIndex = i > 0 ? i - 1 : 0;
+                        console.log("currentLyricIndex", currentLyricIndex);
+                        if (lyricsWTimes.get(currentLyricIndex).lyric === "" || !lyricsWTimes.get(currentLyricIndex).lyric) {
+                            console.log("entered 1");
+                            lyricText.text = prevNonEmptyLyric;
+                        } else {
+                            console.log("entered 2")
+                            var lyric = lyricsWTimes.get(currentLyricIndex).lyric;
+                            lyricText.text = lyric;
+                            prevNonEmptyLyric = lyric;
+                        }
+                        break;
                     }
-                    break;
                 }
             }
         }
