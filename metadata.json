@@ -3,14 +3,14 @@
         "Authors": [
             {
                 "Email": "anicaazhu@gmail.com",
-                "Name": "Kangwei Zhu"
+                "Name": "Conway Z."
             }
         ],
         "Category": "Multimedia",
-        "Description": "[Plasma 5]A widget that could display lyrics of your spotify/yesplaymusic current-playing-song on kde panel and desktop.",
+        "Description": "[Plasma 5 Only]A widget that could display lyrics of your Spotify | Netease Cloud Music | Elisa | etc. current-playing-song on anywhere, including kde panel and desktop.",
         "Icon": "preferences-media-playback-amarok",
         "Id": "lyrics-on-panel-plasma5",
-        "License": "MIT License",
+        "License": "GPL3",
         "Name": "lyrics-on-panel-plasma5",
         "ServiceTypes": [
             "Plasma/Applet"

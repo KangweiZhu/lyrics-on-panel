@@ -5,12 +5,24 @@ import org.kde.plasma.core 2.0 as PlasmaCore
 import org.kde.plasma.plasmoid 2.0
 
 Item {
-    // connect to mpris2 source
+    width: lyricText.contentWidth;
+    height: lyricText.contentHeight
+
+    Plasmoid.preferredRepresentation: Plasmoid.fullRepresentation // Otherwise it will only display your icon declared in the metadata.json file
+    Layout.preferredWidth: lyricText.contentWidth;
+    Layout.preferredHeight: lyricText.contentHeight;
+
+    ListModel {
+        id: lyricsWTimes
+    }
+
     PlasmaCore.DataSource {
         id: mpris2Source
         engine: "mpris2"
         connectedSources: sources
-        readonly property var multiplexSourceKey: data[mode]
+        //readonly property var ypmSourceKey: data["yesplaymusic"]
+        readonly property var multiplexSourceKey: data["@multiplex"]
+        //readonly property var spotifySourceKey: data["spotify"];
         interval: 1 //how rapid it is.
 
         // immediately do some ops after connected
@@ -24,60 +36,6 @@ Item {
         }
     }
 
-    // UI Layout - widget itself
-    width: lyricText.contentWidth;
-    height: lyricText.contentHeight
-    
-    // UI Layout - inside a pre-sized container
-    Plasmoid.preferredRepresentation: Plasmoid.fullRepresentation // Otherwise it will only display your icon declared in the metadata.json file
-    Layout.preferredWidth: lyricText.contentWidth;
-    Layout.preferredHeight: lyricText.contentHeight;
-
-    // Lyric per row Layout
-    Text {
-        id: lyricText
-        text: "[Beta Version] Please regularly check this config page and kde store to see if there is any feature update or fix"
-        color: config_lyricTextColor
-        font.pixelSize: config_lyricTextSize
-        font.bold: config_lyricTextBold
-        font.italic: config_lyricTextItalic
-        anchors.fill: parent
-        verticalAlignment: Text.AlignVCenter
-        horizontalAlignment: Text.AlignHCenter  
-    }
-
-    // config page variable
-    property bool config_yesPlayMusicChecked: Plasmoid.configuration.yesPlayMusicChecked;
-    property bool config_spotifyChecked: Plasmoid.configuration.spotifyChecked;
-    property bool config_compatibleModeChecked: Plasmoid.configuration.compatibleModeChecked;
-    property int config_lyricTextSize: Plasmoid.configuration.lyricTextSize;
-    property string config_lyricTextColor: Plasmoid.configuration.lyricTextColor;
-    property bool config_lyricTextBold: Plasmoid.configuration.lyricTextBold;
-    property bool config_lyricTextItalic: Plasmoid.configuration.lyricTextItalic;
-
-    // lyric display mode
-    // yesplaymusic: only yesplaymusic's lyric
-    // spotify: only spotify's lyric
-    // multiplex: global mode, depend on the current playing media. (Also priority dependent).
-    property string mode: {
-        if (config_yesPlayMusicChecked) {
-            return "yesplaymusic";
-        } 
-        if (config_spotifyChecked) {
-            return "spotify";
-        }
-        if (config_compatibleModeChecked) {
-            return "@multiplex";
-        }
-        return "@multiplex";
-    }
-
-    // List/Map that storing [{timestamp: xxx, lyric: xxx}, {timestamp: xxx, lyric: xxx}, {timestamp: xxx, lyric: xxx}]
-    ListModel {
-        id: lyricsWTimes
-    }
-
-    // Global constant
     readonly property string ypm_base_url: "http://localhost:27232"
     readonly property string lrclib_base_url: "https://lrclib.net"
     
@@ -97,17 +55,15 @@ Item {
     //Use to search the next row of lyric in lyricsWTimes
     property int currentLyricIndex: 0
 
-    // variableeee
     property real currentSongTime: 0
+    property string globalLyrics: lrc_not_exists
     property string previousMediaTitle: ""
     property string previousMediaArtists: "" 
     property string prevNonEmptyLyric: ""
     property string previousLrcId: ""
-    property string previousGlobalLrc: ""
     property bool queryFailed: false;
     property int freezeCounter: 0;
     property real previousSongTimeMS: 0
-
     // title of current media
     property string currentMediaTitle: {
         if (compatibleData && compatibleMetaData["xesam:title"]) {
@@ -135,7 +91,6 @@ Item {
         }
     }
 
-    // construct the lrclib's request url
     property string lrcQueryUrl: {
         if (queryFailed) { // 如果失败了就用歌名做一次模糊查询。lrclib只支持模糊查询一个field.所以只能专辑|歌手名|歌名选一个， 很明显歌名的结果最准确。
             return lrclib_base_url + "/api/search" + "?track_name=" + encodeURIComponent(currentMediaTitle) + 
@@ -147,7 +102,6 @@ Item {
         }
     }
     
-    // exception handling: no lyric => only display title - artists
     property string lrc_not_exists: {
         if (currentMediaTitle && currentMediaArtists) {
             return currentMediaTitle + " - " + currentMediaArtists;
@@ -159,31 +113,17 @@ Item {
     }
 
     Timer {
-        id: yesPlayMusicTimer
-        interval: 1000
-        running: false
-        repeat: true
-        onTriggered: {
-            compatibleModeTimer.stop();
-            fetchMediaIdYPM();
-        }
-    }
-
-    // compatible mode timer
-    Timer {
         id: compatibleModeTimer
         interval: 1000
         running: true
         repeat: true
         onTriggered: {
-            yesPlayMusicTimer.stop();
             debugLog();
             console.log(queryFailed);
             fetchLyricsCompatibleMode();
         }
     }
 
-    // [Feature haven't been implemented]
     // Case: When we are unable to find the correspond lyric via lrclib api while we are listening to the music from YESPLAYMUSIC(YPM). 
     // Then what we gonna do is to attempt to fetch the lyric from the "YPM lyric api" which is exposed to our localhost.
     // Then if we indeed find the correspond lyric, we will first post this lyric to liclib. So everyone later on will be able to 
@@ -204,7 +144,6 @@ Item {
         }
     }
 
-    // fetch the current media id from yesplaymusic(ypm);
     function fetchMediaIdYPM() {
         var xhr = new XMLHttpRequest();
         xhr.open("GET", ypm_base_url + "/player");
@@ -221,7 +160,6 @@ Item {
         xhr.send();
     }
 
-    // fetch the current media lyric from yesplaymusic by media id
     function fetchSyncLyricYPM() {
         var xhr = new XMLHttpRequest();
         xhr.open("GET", ypm_base_url + "/api/lyric?id=" + currentMediaYPMId);
@@ -229,22 +167,19 @@ Item {
             if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
                 var response = JSON.parse(xhr.responseText);
                 if (response && response.lrc && response.lrc.lyric) {
-                    //parseAndUpload(response.lrc.lyric);
+                    parseAndUpload(response.lrc.lyric);
                 }
             }
         };
         xhr.send();
     }
 
-    //[Feature haven't been implemented]
     function parseAndUpload(ypmLrc) {
         console.log("Ypm Lrc", ypmLrc);
     }
 
-    // parse the lyric
-    // [["[00:26.64] first row of lyric\n"]], ["[00:29.70] second row of lyric\n]"],etc...]
-    function parseLyric(lyrics) {
-        var lrcList = lyrics.split("\n");
+    function parseLyric() {
+        var lrcList = globalLyrics.split("\n");
         for (var i = 0; i < lrcList.length; i++) {
             var lyricPerRowWTime = lrcList[i].split("]");
             if (lyricPerRowWTime.length > 1) {
@@ -269,15 +204,17 @@ Item {
                         previousLrcId = Number.MIN_VALUE;
                         lyricsWTimes.clear();
                         lyricText.text = lrc_not_exists;
+                        //isMediaFromYPM();
                     } else {
                         var response = JSON.parse(xhr.responseText)
                         queryFailed = false;
                         if (response && response.length > 0 && previousLrcId !== response[0].id.toString()) { //会出现 Spotify传给Mpris的歌曲名 与 lrclib中的歌曲名不一样的情况，改用id判断
                             lyricsWTimes.clear();
+                            globalLyrics = response[0].syncedLyrics;
                             previousMediaTitle = currentMediaTitle;
                             previousMediaArtists = currentMediaArtists;
                             previousLrcId = response[0].id.toString();
-                            parseLyric(response[0].syncedLyrics);
+                            parseLyric();
                         } else {
                             lyricsWTimes.clear();
                             lyricText.text = lrc_not_exists;
@@ -289,7 +226,6 @@ Item {
         xhr.send();
     }
 
-    // parse time, ignore miliseconds - no needs unless rapping
     function parseTime(timeString) {
         var parts = timeString.split(":");
         var minutes = parseInt(parts[0], 10);
@@ -297,39 +233,28 @@ Item {
         return minutes * 60 + seconds;
     }
 
-    // start lyric timer
     function startLyricDisplayTimer() {
         if (!lyricDisplayTimer.running) {
             lyricDisplayTimer.start();
         }
     }
 
-    // onlyfor debug use
     function debugLog() {
-        console.log("text color: ", config_lyricTextColor)
-        console.log("yesPlayMusicChecked: ", config_yesPlayMusicChecked);
-        console.log("spotifyChecked: ", config_spotifyChecked);
-        console.log("compatibleModeChecked: ", config_compatibleModeChecked);
-        console.log("mode: ", mode);
-        console.log("current track id: ", currentMediaTitle);
-        console.log("current artist: ", currentMediaArtists);
-        console.log("current album name: ", currentMediaAlbum);
-        console.log("previous track id: ", previousMediaTitle);
-        console.log("previous artist: ", previousMediaArtists);
+        console.log("current track id", currentMediaTitle);
+        console.log("current artist", currentMediaArtists);
+        console.log("current album name", currentMediaAlbum);
+        console.log("previous track id", previousMediaTitle);
+        console.log("previous artist", previousMediaArtists);
     }
 
-    // Timer {
-    //     id: reconnectTimer
-    //     interval: 500
-    //     running: true
-    //     repeat: true
-    //     onTriggered: {
-    //         if (!mpris2Source.data["spotify"] || !compatibleData) {
-    //             mpris2Source.disconnectSource("sources");
-    //             mpris2Source.connectSource("sources");
-    //         }
-    //     }
-    // }
+    Text {
+        id: lyricText
+        text: "[Beta Version] Please regularly check this config page and kde store to see if there is any feature update or fix"
+        color: PlasmaCore.Theme.textColor
+        anchors.fill: parent
+        verticalAlignment: Text.AlignVCenter
+        horizontalAlignment: Text.AlignHCenter
+    }
 
     Timer {
         id: lyricDisplayTimer
@@ -337,7 +262,7 @@ Item {
         running: true
         repeat: true
         onTriggered: { 
-            //console.log(JSON.stringify(mpris2Source.multiplexSourceKey));
+            console.log(JSON.stringify(mpris2Source.multiplexSourceKey));
             currentSongTime = compatibleSongTimeMS / 1000;
             previousSongTimeMS = compatibleSongTimeMS;
             //console.log(globalLyrics);

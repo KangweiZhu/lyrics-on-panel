@@ -16,4 +16,10 @@ ConfigModel {
         icon: "configure"
         source: "configGeneral.qml"
     }
+
+    ConfigCategory {
+        name: i18n("Upload Lyric")
+        icon: "note"
+        source: "lyricUpload.qml"
+    }
 }

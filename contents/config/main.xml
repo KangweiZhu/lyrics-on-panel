@@ -3,19 +3,32 @@
     <kcfgfile name=""/>
 
     <group name="General">
-        <entry name="yesPlayMusicPropriataryRadioButton" type="Bool">
-            <default>true</default>
-        </entry>
-        <entry name="spotifyPropriataryRadioButton" type="Bool">
+        <entry name="yesPlayMusicChecked" type="Bool">
             <default>false</default>
         </entry>
+        <entry name="spotifyChecked" type="Bool">
+            <default>true</default>
+        </entry>
+        <entry name="compatibleModeChecked" type="Bool">
+            <default>false</default>
+        </entry>
+        <entry name="lyricTextSize" type="Int">
+            <default>13</default>
+        </entry>
+        <entry name="lyricTextColor" type="Color">
+            <default>PlasmaCore.Theme.textColor</default>
+        </entry>
+        <entry name="lyricTextBold" type="Bool">
+            <default>true</default>
+        </entry>
+        <entry name="lyricTextItalic" type="Bool">
+            <default>false</default>
+        </entry>
+    </group>
+
+    <group name="Notification">
         <entry name="compatibleModeRadioButton" type="Bool">
             <default>false</default>
         </entry>
-        <entry name="spotifyToken" type="string">
-            <default>undefined</default>
-        </entry>
-    </group>
-    <group name="Notification">
     </group>
 </kcfg>
