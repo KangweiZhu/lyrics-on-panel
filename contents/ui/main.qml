@@ -55,7 +55,6 @@ Item {
         running: true
         repeat: true
         onTriggered: {
-            console.log(JSON.stringify(mpris2Source));
             if (config_compatibleModeChecked || config_spotifyChecked) {
                 yesPlayMusicTimer.stop();
                 compatibleModeTimer.start();
