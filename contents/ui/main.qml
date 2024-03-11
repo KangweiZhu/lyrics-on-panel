@@ -3,6 +3,7 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.1
 import org.kde.plasma.core 2.0 as PlasmaCore
 import org.kde.plasma.plasmoid 2.0
+import org.kde.plasma.components 2.0 as PlasmaComponents
 
 Item { 
     // connect to mpris2 source
@@ -27,16 +28,9 @@ Item {
         }
     }
 
-    // UI Layout - widget itself
-    width: lyricText.contentWidth;
-    height: lyricText.contentHeight
-    
-    // UI Layout - inside a pre-sized container
-    Plasmoid.preferredRepresentation: Plasmoid.fullRepresentation // Otherwise it will only display your icon declared in the metadata.json file
-    Layout.preferredWidth: lyricText.contentWidth;
-    Layout.preferredHeight: lyricText.contentHeight;
+    width: lyricText.contentWidth + iconsContainer.width;
+    height: lyricText.contentHeight;
 
-    // Lyric per row Layout
     Text {
         id: lyricText
         text: "[Beta Version] Please regularly check this config page and kde store to see if there is any feature update or fix"
@@ -44,14 +38,70 @@ Item {
         font.pixelSize: config_lyricTextSize
         font.bold: config_lyricTextBold
         font.italic: config_lyricTextItalic
-        anchors.fill: parent
-        verticalAlignment: Text.AlignVCenter
-        horizontalAlignment: Text.AlignHCenter  
+        wrapMode: Text.wrap
+        anchors.right: parent.right
+        anchors.rightMargin: 6 * (config_lyricTextSize + 5)
+        anchors.verticalCenter: parent.verticalCenter
     }
+
+    Item {
+        id: iconsContainer
+        anchors.right: parent.right
+        anchors.rightMargin: 10
+        anchors.verticalCenter: parent.verticalCenter
+        width: 5 * config_lyricTextSize + 4 * 7 // 5 icons + 4 spacings
+        height: config_lyricTextSize
+        anchors.verticalCenterOffset: 1
+
+        Image {
+            source: backwardIcon
+            sourceSize.width: config_lyricTextSize //不能用width, 锯齿太严重，直接控制图片渲染svg的大小
+            sourceSize.height: config_lyricTextSize
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+        }
+
+        Image {
+            source: pauseIcon
+            sourceSize.width: config_lyricTextSize
+            sourceSize.height: config_lyricTextSize
+            anchors.left: parent.left
+            anchors.leftMargin: config_lyricTextSize + 5
+            anchors.verticalCenter: parent.verticalCenter
+        }
+
+        Image {
+            source: forwardIcon
+            sourceSize.width: config_lyricTextSize
+            sourceSize.height: config_lyricTextSize
+            anchors.left: parent.left
+            anchors.leftMargin: 2 * (config_lyricTextSize + 5)
+            anchors.verticalCenter: parent.verticalCenter
+        }
+
+        Image {
+            source: likeIcon
+            sourceSize.width: config_lyricTextSize
+            sourceSize.height: config_lyricTextSize
+            anchors.left: parent.left
+            anchors.leftMargin: 3 * (config_lyricTextSize + 5)
+            anchors.verticalCenter: parent.verticalCenter
+        }
+
+        Image {
+            source: cloudMusicIcon
+            sourceSize.width: config_lyricTextSize
+            sourceSize.height: config_lyricTextSize
+            anchors.left: parent.left
+            anchors.leftMargin: 4 * (config_lyricTextSize + 5)
+            anchors.verticalCenter: parent.verticalCenter
+        }
+    }
+
 
     Timer {
         id: schedulerTimer
-        interval: 1000
+        interval: 500
         running: true
         repeat: true
         onTriggered: {
@@ -67,7 +117,7 @@ Item {
 
     Timer {
         id: yesPlayMusicTimer
-        interval: 1000
+        interval: 500
         running: false
         repeat: true
         onTriggered: {
@@ -84,7 +134,7 @@ Item {
     // compatible mode timer
     Timer {
         id: compatibleModeTimer
-        interval: 1000
+        interval: 500
         running: false
         repeat: true
         onTriggered: {
@@ -97,32 +147,6 @@ Item {
         }
     }
 
-    // config page variable
-    property bool config_yesPlayMusicChecked: Plasmoid.configuration.yesPlayMusicChecked;
-    property bool config_spotifyChecked: Plasmoid.configuration.spotifyChecked;
-    property bool config_compatibleModeChecked: Plasmoid.configuration.compatibleModeChecked;
-    property int config_lyricTextSize: Plasmoid.configuration.lyricTextSize;
-    property string config_lyricTextColor: Plasmoid.configuration.lyricTextColor;
-    property bool config_lyricTextBold: Plasmoid.configuration.lyricTextBold;
-    property bool config_lyricTextItalic: Plasmoid.configuration.lyricTextItalic;
-
-    // lyric display mode
-    // yesplaymusic: only yesplaymusic's lyric
-    // spotify: only spotify's lyric
-    // multiplex: global mode, depend on the current playing media. (Also priority dependent).
-    property string mode: {
-        if (config_yesPlayMusicChecked) { //[BUG FIXED]动态更新源，解决 多个媒体源存在于datasource时，yesplaymusic退出后重进，datasource没法更新的问题。spoity依旧unfixed.都是客户端自身的缺陷。
-            return mpris2Source.data["@multiplex"].Identity === "YesPlayMusic" ? "@multiplex" : "yesplaymusic"; 
-        } 
-        if (config_spotifyChecked) {
-            return "spotify"; 
-        }
-        if (config_compatibleModeChecked) {
-            return "@multiplex";
-        }
-        return "@multiplex";
-    }
-
     // List/Map that storing [{timestamp: xxx, lyric: xxx}, {timestamp: xxx, lyric: xxx}, {timestamp: xxx, lyric: xxx}]
     ListModel {
         id: lyricsWTimes
@@ -131,6 +155,22 @@ Item {
     // Global constant
     readonly property string ypm_base_url: "http://localhost:27232"
     readonly property string lrclib_base_url: "https://lrclib.net"
+
+    // ui variables
+    property string backwardIcon: "../assets/media-backward.svg"
+    property string pauseIcon: "../assets/media-pause.svg"
+    property string forwardIcon: "../assets/media-forward.svg"
+    property string likeIcon: "../assets/media-like.svg"
+    property string cloudMusicIcon: "../assets/netease-cloud-music.svg"
+
+    // config page variable
+    property bool config_yesPlayMusicChecked: Plasmoid.configuration.yesPlayMusicChecked;
+    property bool config_spotifyChecked: Plasmoid.configuration.spotifyChecked;
+    property bool config_compatibleModeChecked: Plasmoid.configuration.compatibleModeChecked;
+    property int config_lyricTextSize: Plasmoid.configuration.lyricTextSize;
+    property string config_lyricTextColor: Plasmoid.configuration.lyricTextColor;
+    property bool config_lyricTextBold: Plasmoid.configuration.lyricTextBold;
+    property bool config_lyricTextItalic: Plasmoid.configuration.lyricTextItalic;
 
     //Other Media Player's mpris2 data
     property var compatibleMetaData: mpris2Source ? mpris2Source.data[mode].Metadata : undefined
@@ -153,6 +193,23 @@ Item {
     property bool queryFailed: false;
     property real previousSongTimeMS: 0
     property var globalLyrics;
+
+    // lyric display mode
+    // yesplaymusic: only yesplaymusic's lyric
+    // spotify: only spotify's lyric
+    // multiplex: global mode, depend on the current playing media. (Also priority dependent).
+    property string mode: {
+        if (config_yesPlayMusicChecked) { //[BUG FIXED]动态更新源，解决 多个媒体源存在于datasource时，yesplaymusic退出后重进，datasource没法更新的问题。spoity依旧unfixed.都是客户端自身的缺陷。
+            return mpris2Source.data["@multiplex"].Identity === "YesPlayMusic" ? "@multiplex" : "yesplaymusic"; 
+        } 
+        if (config_spotifyChecked) {
+            return "spotify"; 
+        }
+        if (config_compatibleModeChecked) {
+            return "@multiplex";
+        }
+        return "@multiplex";
+    }
 
     // title of current media
     property string currentMediaTitle: {
@@ -302,7 +359,6 @@ Item {
                             previousMediaTitle = currentMediaTitle;
                             previousMediaArtists = currentMediaArtists;
                             previousLrcId = response[0].id.toString();
-                            //globalLyrics = response[0].syncedLyrics; //debug use
                             parseLyric(response[0].syncedLyrics);
                         } else {
                             lyricsWTimes.clear();
@@ -315,7 +371,7 @@ Item {
         xhr.send();
     }
 
-    // parse time, ignore miliseconds - no needs unless rapping
+    // parse time, ignore miliseconds
     function parseTime(timeString) {
         var parts = timeString.split(":");
         var minutes = parseInt(parts[0], 10);
@@ -370,5 +426,9 @@ Item {
                 }
             }
         }
+    }
+
+    Component.onCompleted: {
+        mediaSource.serviceForSource("@multiplex").enableGlobalShortcuts();
     }
 }
