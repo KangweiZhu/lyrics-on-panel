@@ -28,76 +28,80 @@ Item {
         }
     }
 
-    width: lyricText.contentWidth + iconsContainer.width;
+    Plasmoid.preferredRepresentation: Plasmoid.fullRepresentation // Otherwise it will only display your icon declared in the metadata.json file
+    Layout.preferredWidth: 700;
+    Layout.preferredHeight: lyricText.contentHeight;
+
+    width: 700;
     height: lyricText.contentHeight;
 
     Text {
         id: lyricText
-        text: "[Beta Version] Please regularly check this config page and kde store to see if there is any feature update or fix"
+        text: "By AnicaaZ The coding god"
         color: config_lyricTextColor
         font.pixelSize: config_lyricTextSize
         font.bold: config_lyricTextBold
         font.italic: config_lyricTextItalic
-        wrapMode: Text.wrap
+        //wrapMode: Text.wrap
         anchors.right: parent.right
-        anchors.rightMargin: 6 * (config_lyricTextSize + 5)
+        anchors.rightMargin: 6 * (config_mediaControllItemSize + config_mediaControllSpacing)
         anchors.verticalCenter: parent.verticalCenter
+        anchors.verticalCenterOffset: config_lyricTextVerticalOffset
     }
 
     Item {
         id: iconsContainer
         anchors.right: parent.right
-        anchors.rightMargin: 10
+        anchors.rightMargin: 1 //10
         anchors.verticalCenter: parent.verticalCenter
-        width: 5 * config_lyricTextSize + 4 * 7 // 5 icons + 4 spacings
-        height: config_lyricTextSize
-        anchors.verticalCenterOffset: 1
+        width: 5 * config_mediaControllItemSize + 4 * config_mediaControllSpacing // 5 icons + 4 spacings
+        height: config_mediaControllItemSize
+        anchors.verticalCenterOffset: config_mediaControllItemVerticalOffset
 
         Image {
             source: backwardIcon
-            sourceSize.width: config_lyricTextSize //不能用width, 锯齿太严重，直接控制图片渲染svg的大小
-            sourceSize.height: config_lyricTextSize
+            sourceSize.width: config_mediaControllItemSize //不能用width, 锯齿太严重，直接控制图片渲染svg的大小
+            sourceSize.height: config_mediaControllItemSize
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
         }
 
         Image {
             source: pauseIcon
-            sourceSize.width: config_lyricTextSize
-            sourceSize.height: config_lyricTextSize
+            sourceSize.width: config_mediaControllItemSize
+            sourceSize.height: config_mediaControllItemSize
             anchors.left: parent.left
-            anchors.leftMargin: config_lyricTextSize + 5
+            anchors.leftMargin: config_mediaControllItemSize + config_mediaControllSpacing
             anchors.verticalCenter: parent.verticalCenter
         }
 
         Image {
             source: forwardIcon
-            sourceSize.width: config_lyricTextSize
-            sourceSize.height: config_lyricTextSize
+            sourceSize.width: config_mediaControllItemSize
+            sourceSize.height: config_mediaControllItemSize
             anchors.left: parent.left
-            anchors.leftMargin: 2 * (config_lyricTextSize + 5)
+            anchors.leftMargin: 2 * (config_mediaControllItemSize + config_mediaControllSpacing)
             anchors.verticalCenter: parent.verticalCenter
         }
 
         Image {
             source: likeIcon
-            sourceSize.width: config_lyricTextSize
-            sourceSize.height: config_lyricTextSize
+            sourceSize.width: config_mediaControllItemSize
+            sourceSize.height: config_mediaControllItemSize
             anchors.left: parent.left
-            anchors.leftMargin: 3 * (config_lyricTextSize + 5)
+            anchors.leftMargin: 3 * (config_mediaControllItemSize + config_mediaControllSpacing)
             anchors.verticalCenter: parent.verticalCenter
         }
 
         Image {
             source: cloudMusicIcon
-            sourceSize.width: config_lyricTextSize
-            sourceSize.height: config_lyricTextSize
+            sourceSize.width: config_mediaControllItemSize
+            sourceSize.height: config_mediaControllItemSize
             anchors.left: parent.left
-            anchors.leftMargin: 4 * (config_lyricTextSize + 5)
+            anchors.leftMargin: 4 * (config_mediaControllItemSize + config_mediaControllSpacing)
             anchors.verticalCenter: parent.verticalCenter
         }
     }
-
 
     Timer {
         id: schedulerTimer
@@ -171,6 +175,10 @@ Item {
     property string config_lyricTextColor: Plasmoid.configuration.lyricTextColor;
     property bool config_lyricTextBold: Plasmoid.configuration.lyricTextBold;
     property bool config_lyricTextItalic: Plasmoid.configuration.lyricTextItalic;
+    property int config_mediaControllSpacing: Plasmoid.configuration.mediaControllSpacing
+    property int config_mediaControllItemSize: Plasmoid.configuration.mediaControllItemSize
+    property int config_mediaControllItemVerticalOffset: Plasmoid.configuration.mediaControllItemVerticalOffset;
+    property int config_lyricTextVerticalOffset: Plasmoid.configuration.lyricTextVerticalOffset
 
     //Other Media Player's mpris2 data
     property var compatibleMetaData: mpris2Source ? mpris2Source.data[mode].Metadata : undefined

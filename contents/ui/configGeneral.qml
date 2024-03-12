@@ -8,13 +8,17 @@ import QtQuick.Layouts 1.0 as QQLayouts
 Kirigami.FormLayout {
     id: generalPage
   
-    property alias cfg_yesPlayMusicChecked: yesPlayMusicPropriataryRadioButton.checked //default false
-    property alias cfg_spotifyChecked: spotifyPropriataryRadioButton.checked    // defaylt true
-    property alias cfg_compatibleModeChecked: compatibleModeRadioButton.checked // default false
-    property alias cfg_lyricTextSize: lyricTextSizeSpinBox.value    //default 13
-    property alias cfg_lyricTextColor: lyricTextColorButton.color   //default follow system theme
-    property alias cfg_lyricTextBold: boldButton.checked    // default true
-    property alias cfg_lyricTextItalic: italicButton.checked //default false
+    property alias cfg_yesPlayMusicChecked: yesPlayMusicPropriataryRadioButton.checked 
+    property alias cfg_spotifyChecked: spotifyPropriataryRadioButton.checked   
+    property alias cfg_compatibleModeChecked: compatibleModeRadioButton.checked
+    property alias cfg_lyricTextSize: lyricTextSizeSpinBox.value 
+    property alias cfg_lyricTextColor: lyricTextColorButton.color
+    property alias cfg_lyricTextBold: boldButton.checked   
+    property alias cfg_lyricTextItalic: italicButton.checked 
+    property alias cfg_lyricTextVerticalOffset: lyricTextVerticalOffsetSpinBox.value
+    property alias cfg_mediaControllSpacing: mediaControllSpacingSpinBox.value
+    property alias cfg_mediaControllItemSize: mediaControllItemSizeSpinBox.value
+    property alias cfg_mediaControllItemVerticalOffset: mediaControllItemVerticalOffsetSpinBox.value
 
     QQC2.RadioButton {
         id: yesPlayMusicPropriataryRadioButton
@@ -36,6 +40,26 @@ Kirigami.FormLayout {
         id: lyricTextSizeSpinBox
         Kirigami.FormData.label: i18n("Lyric Text Size: ")
     }
+
+    QQC2.SpinBox {
+        id: lyricTextVerticalOffsetSpinBox
+        Kirigami.FormData.label: i18n("Lyric Text vertical offset: ")
+    }
+
+    QQC2.SpinBox {
+        id: mediaControllSpacingSpinBox
+        Kirigami.FormData.label: i18n("Media Controll Items spacing: ")
+    }
+
+    QQC2.SpinBox {
+        id: mediaControllItemSizeSpinBox
+        Kirigami.FormData.label: i18n("Media Controll Items size: ")
+    }
+
+    QQC2.SpinBox {
+        id: mediaControllItemVerticalOffsetSpinBox
+        Kirigami.FormData.label: i18n("Media Controll Items' vertical offset: ")
+    }
     
     QQLayouts.RowLayout {
         Kirigami.FormData.label: i18n("Lyric Text Color: ")
@@ -47,7 +71,7 @@ Kirigami.FormLayout {
         QQC2.Button {
             id: boldButton
             QQC2.ToolTip {
-                text: i18n("set text to bold")
+                text: i18n("Set text to bold")
             }
             icon.name: "format-text-bold"
             checkable: true
