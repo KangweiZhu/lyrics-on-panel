@@ -24,7 +24,7 @@ Item {
 
         // triggered when there is a change in data. Prefect place for debugging
         onDataChanged: {
-
+            
         }
     }
 
@@ -74,7 +74,7 @@ Item {
         }
 
         Image {
-            source: paused ? playIcon : pauseIcon
+            source: (mpris2Source && mpris2Source.data[mode] && mpris2Source.data[mode].PlaybackStatus === "Playing") ? pauseIcon : playIcon
             sourceSize.width: config_mediaControllItemSize
             sourceSize.height: config_mediaControllItemSize
             anchors.left: parent.left
@@ -84,12 +84,10 @@ Item {
             MouseArea {
                 anchors.fill: parent
                 onClicked: {
-                    if (paused) {
-                        paused = false;
-                        play();
-                    } else {
-                        paused = true;
+                    if (mpris2Source && mpris2Source.data[mode] && mpris2Source.data[mode].PlaybackStatus === "Playing") {
                         pause();
+                    } else {
+                        play();
                     }
                 }
             }
@@ -112,7 +110,7 @@ Item {
         }
 
         Image {
-            source: likeIcon
+            source: liked ? likedIcon : likeIcon
             sourceSize.width: config_mediaControllItemSize
             sourceSize.height: config_mediaControllItemSize
             anchors.left: parent.left
@@ -122,8 +120,10 @@ Item {
             MouseArea {
                 anchors.fill: parent
                 onClicked: {
-                    if (config_yesPlayMusicChecked) {
-                        
+                    if (liked) {
+                        liked = false;
+                    } else {
+                        liked = true;
                     }
                 }
             }
@@ -201,10 +201,11 @@ Item {
     property string pauseIcon: "../assets/media-pause.svg"
     property string forwardIcon: "../assets/media-forward.svg"
     property string likeIcon: "../assets/media-like.svg"
+    property string likedIcon: "../assets/media-liked.svg"
     property string cloudMusicIcon: "../assets/netease-cloud-music.svg"
     property string spotifyIcon: "../assets/spotify.svg"
     property string playIcon: "../assets/media-play.svg"
-    property bool paused: false;
+    property bool liked: false;
 
     // config page variable
     property bool config_yesPlayMusicChecked: Plasmoid.configuration.yesPlayMusicChecked;
