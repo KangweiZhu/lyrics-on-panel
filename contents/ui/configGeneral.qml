@@ -7,7 +7,8 @@ import QtQuick.Layouts 1.0 as QQLayouts
 
 Kirigami.FormLayout {
     id: generalPage
-  
+    signal configurationChanged
+
     property alias cfg_yesPlayMusicChecked: yesPlayMusicPropriataryRadioButton.checked 
     property alias cfg_spotifyChecked: spotifyPropriataryRadioButton.checked   
     property alias cfg_compatibleModeChecked: compatibleModeRadioButton.checked

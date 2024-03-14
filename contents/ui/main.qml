@@ -12,7 +12,7 @@ Item {
         engine: "mpris2"
         connectedSources: sources
         interval: 1 //how rapid it is.
-
+    
         onConnectedSourcesChanged: {
             currentMediaYPMId = "";
             previousMediaTitle = "";
@@ -37,7 +37,7 @@ Item {
 
     Text {
         id: lyricText
-        text: "By AnicaaZ The coding god"
+        text: "Please open the configuration of this widget and read the developer's note!"
         color: config_lyricTextColor
         font.pixelSize: config_lyricTextSize
         font.bold: config_lyricTextBold
@@ -64,15 +64,35 @@ Item {
             sourceSize.height: config_mediaControllItemSize
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    previous();
+                }
+            }
         }
 
         Image {
-            source: pauseIcon
+            source: paused ? playIcon : pauseIcon
             sourceSize.width: config_mediaControllItemSize
             sourceSize.height: config_mediaControllItemSize
             anchors.left: parent.left
             anchors.leftMargin: config_mediaControllItemSize + config_mediaControllSpacing
             anchors.verticalCenter: parent.verticalCenter
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    if (paused) {
+                        paused = false;
+                        play();
+                    } else {
+                        paused = true;
+                        pause();
+                    }
+                }
+            }
         }
 
         Image {
@@ -82,6 +102,13 @@ Item {
             anchors.left: parent.left
             anchors.leftMargin: 2 * (config_mediaControllItemSize + config_mediaControllSpacing)
             anchors.verticalCenter: parent.verticalCenter
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    next();
+                }
+            }
         }
 
         Image {
@@ -91,10 +118,19 @@ Item {
             anchors.left: parent.left
             anchors.leftMargin: 3 * (config_mediaControllItemSize + config_mediaControllSpacing)
             anchors.verticalCenter: parent.verticalCenter
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    if (config_yesPlayMusicChecked) {
+                        
+                    }
+                }
+            }
         }
 
         Image {
-            source: cloudMusicIcon
+            source: config_yesPlayMusicChecked ? cloudMusicIcon : spotifyIcon
             sourceSize.width: config_mediaControllItemSize
             sourceSize.height: config_mediaControllItemSize
             anchors.left: parent.left
@@ -166,6 +202,9 @@ Item {
     property string forwardIcon: "../assets/media-forward.svg"
     property string likeIcon: "../assets/media-like.svg"
     property string cloudMusicIcon: "../assets/netease-cloud-music.svg"
+    property string spotifyIcon: "../assets/spotify.svg"
+    property string playIcon: "../assets/media-play.svg"
+    property bool paused: false;
 
     // config page variable
     property bool config_yesPlayMusicChecked: Plasmoid.configuration.yesPlayMusicChecked;
@@ -332,6 +371,11 @@ Item {
         console.log("Ypm Lrc", ypmLrc);
     }
 
+    function likeMusicYPM() {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", ypm_base_url + "/api/like" + "?id=");
+    }
+
     // parse the lyric
     // [["[00:26.64] first row of lyric\n"]], ["[00:29.70] second row of lyric\n]"],etc...]
     function parseLyric(lyrics) {
@@ -394,18 +438,26 @@ Item {
         }
     }
 
-    // onlyfor debug use
-    function debugLog() {
-        console.log("text color: ", config_lyricTextColor)
-        console.log("yesPlayMusicChecked: ", config_yesPlayMusicChecked);
-        console.log("spotifyChecked: ", config_spotifyChecked);
-        console.log("compatibleModeChecked: ", config_compatibleModeChecked);
-        console.log("mode: ", mode);
-        console.log("current track id: ", currentMediaTitle);
-        console.log("current artist: ", currentMediaArtists);
-        console.log("current album name: ", currentMediaAlbum);
-        console.log("previous track id: ", previousMediaTitle);
-        console.log("previous artist: ", previousMediaArtists);
+    function previous() {
+        serviceOps("Previous")
+    }
+
+    function play() {
+        serviceOps("Play")
+    }
+
+    function pause() {
+        serviceOps("Pause")
+    }
+
+    function next() {
+        serviceOps("Next")
+    }
+
+    function serviceOps(ops) {
+        var service = mpris2Source.serviceForSource(mode);
+        var operation = service.operationDescription(ops);
+        service.startOperationCall(operation);
     }
 
     Timer {
@@ -434,9 +486,5 @@ Item {
                 }
             }
         }
-    }
-
-    Component.onCompleted: {
-        mediaSource.serviceForSource("@multiplex").enableGlobalShortcuts();
     }
 }
