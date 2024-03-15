@@ -1,18 +1,21 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.1
+import QtQuick.Window 2.15
+
 import org.kde.plasma.core 2.0 as PlasmaCore
 import org.kde.plasma.plasmoid 2.0
-import org.kde.plasma.components 2.0 as PlasmaComponents
+import org.kde.plasma.components 3.0 as PlasmaComponents
 
 Item { 
+    id: root
     // connect to mpris2 source
     PlasmaCore.DataSource {
         id: mpris2Source
         engine: "mpris2"
         connectedSources: sources
-        interval: 1 //how rapid it is.
-    
+        interval: 1 
+
         onConnectedSourcesChanged: {
             currentMediaYPMId = "";
             previousMediaTitle = "";
@@ -29,10 +32,10 @@ Item {
     }
 
     Plasmoid.preferredRepresentation: Plasmoid.fullRepresentation // Otherwise it will only display your icon declared in the metadata.json file
-    Layout.preferredWidth: 700;
+    Layout.preferredWidth: 0;
     Layout.preferredHeight: lyricText.contentHeight;
-
-    width: 700;
+    
+    width: 0;
     height: lyricText.contentHeight;
 
     Text {
@@ -42,7 +45,6 @@ Item {
         font.pixelSize: config_lyricTextSize
         font.bold: config_lyricTextBold
         font.italic: config_lyricTextItalic
-        //wrapMode: Text.wrap
         anchors.right: parent.right
         anchors.rightMargin: 6 * (config_mediaControllItemSize + config_mediaControllSpacing)
         anchors.verticalCenter: parent.verticalCenter
@@ -54,7 +56,7 @@ Item {
         anchors.right: parent.right
         anchors.rightMargin: 1 //10
         anchors.verticalCenter: parent.verticalCenter
-        width: 5 * config_mediaControllItemSize + 4 * config_mediaControllSpacing // 5 icons + 4 spacings
+        width: 5 * config_mediaControllItemSize + 4 * config_mediaControllSpacing
         height: config_mediaControllItemSize
         anchors.verticalCenterOffset: config_mediaControllItemVerticalOffset
 
@@ -130,14 +132,96 @@ Item {
         }
 
         Image {
+            id: mediaPlayerIcon
             source: config_yesPlayMusicChecked ? cloudMusicIcon : spotifyIcon
             sourceSize.width: config_mediaControllItemSize
             sourceSize.height: config_mediaControllItemSize
             anchors.left: parent.left
             anchors.leftMargin: 4 * (config_mediaControllItemSize + config_mediaControllSpacing)
             anchors.verticalCenter: parent.verticalCenter
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    var globalPos = mediaPlayerIcon.mapToGlobal(0, 0);
+                    if (config_yesPlayMusicChecked) {
+                        menuDialog.x = globalPos.x;
+                        menuDialog.y = globalPos.y * 3.5;
+                        if (!dialogShowed) { //苯办法了，后面看下怎么判定失去焦点
+                            menuDialog.show(); 
+                            dialogShowed = true;
+                        } else {
+                            dialogShowed = false;
+                            menuDialog.close();
+                        }
+                        
+                    }
+                }
+            }
         }
     }
+
+    // variables that are neccessary for ypm like/dislike and others new features in the future
+    property bool dialogShowed: false;
+    property bool ypmLogined: false;
+    property string ypmUserInfo: "anicaaz";
+    property string ypmCookie: "";
+
+    PlasmaCore.Dialog {
+        id: menuDialog
+        visible: false
+
+        // onActiveFocusChanged: {
+        //     console.log("entered");
+        // } //用mouseArea做试试
+
+        Column {
+            PlasmaComponents.MenuItem {
+                id: userInfoMenuItem
+                visible: true
+                text: ypmLogined ? userInfo : i18n("登录")
+
+                onTriggered: {
+                    if (!ypmLogined) {
+                       userInfoMenuItem.visible = false;
+                       cookieTextField.visible = true;
+                    }
+                }
+            }
+
+            PlasmaComponents.TextField {
+                id: cookieTextField
+                visible: false
+                placeholderText: i18n("输入你的YPM Cookie后按回车")
+
+                onAccepted: {
+                    userInfoMenuItem.visible = true;
+                    cookieTextField.visible = false;
+                    ypmCookie = cookieTextField.text
+                    ypmLogined = true
+                    //need to add a cookie validation in the future 
+                    console.log(ypmCookie)
+                }
+            }
+
+            PlasmaComponents.MenuItem {
+                id: dailySignIn
+                visible: true
+                text: i18n("每日签到(To be implemented)")
+            }
+
+            PlasmaComponents.MenuItem {
+                id: logout
+                visible: true
+                text: i18n("登出")
+
+                onTriggered: {
+                    ypmLogined = false;
+                }
+            }
+        }
+    }
+
 
     Timer {
         id: schedulerTimer
@@ -231,7 +315,7 @@ Item {
     //Use to search the next row of lyric in lyricsWTimes
     property int currentLyricIndex: 0
 
-    // variableeee
+    // variables
     property real currentSongTime: 0
     property string previousMediaTitle: ""
     property string previousMediaArtists: "" 
@@ -240,7 +324,7 @@ Item {
     property string previousGlobalLrc: ""
     property bool queryFailed: false;
     property real previousSongTimeMS: 0
-    property var globalLyrics;
+    property string base64Image: ""
 
     // lyric display mode
     // yesplaymusic: only yesplaymusic's lyric
@@ -460,6 +544,56 @@ Item {
         var operation = service.operationDescription(ops);
         service.startOperationCall(operation);
     }
+
+
+    // function base64ToFile(base64, fileName) {
+    //     let arr = base64.split(",");
+    //     let mime = arr[0].match(/:(.\*?);/)[1];
+    //     let bstr = atob(arr[1]);
+    //     let n = bstr.length;
+    //     let u8arr = new Uint8Array(n);
+
+    //     while (n--) {
+    //       u8arr[n] = bstr.charCodeAt(n);
+    //     }
+    //     return new File([u8arr], fileName, { type: mime });
+    // }
+
+    // function getYPMQRKey() {
+    //     console.log("entered 1")
+    //     var xhr = new XMLHttpRequest();
+    //     xhr.open("GET", ypm_base_url + "/api/login/qr/key?timestamp=" + new Date().getTime());
+    //     xhr.onreadystatechange = function() {
+    //         if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+    //             var response = JSON.parse(xhr.responseText);
+    //             if (response && response.data && response.data.unikey) {
+    //                 console.log(response.data.unikey);
+    //                 loginQrCodeCreate(response.data.unikey);
+    //                 //parseAndUpload(response.lrc.lyric);
+    //             }
+    //         }
+    //     };
+    //     xhr.send();
+    // }
+    // property string prevImage: ""
+
+    // function loginQrCodeCreate(unikey) {
+    //     var xhr = new XMLHttpRequest();
+    //     xhr.open("GET", ypm_base_url + "/api/login/qr/create?qrimg=" + unikey + "&timestamp=" + new Date().getTime());
+    //     console.log(ypm_base_url + "/api/login/qr/create?qrimg=" + unikey + "&timestamp=" + new Date().getTime())
+    //     xhr.onreadystatechange = function() {
+    //         if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+    //             var response = JSON.parse(xhr.responseText)
+    //             if (response && response.data && response.data.qrimg) {
+    //                 base64Image = response.data.qrimg;
+    //                 console.log(base64Image === prevImage);
+    //                 prevImage = base64Image;
+    //                 qrCodeDialog.open();
+    //             }
+    //         }
+    //     };
+    //     xhr.send();
+    // }
 
     Timer {
         id: lyricDisplayTimer
