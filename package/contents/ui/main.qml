@@ -164,9 +164,12 @@ Item {
     // variables that are neccessary for ypm like/dislike and others new features in the future
     property bool dialogShowed: false;
     property bool ypmLogined: false;
-    property string ypmUserInfo: "anicaaz";
-    property string ypmCookie: "";
+    property string ypmUserName: "";
+    property string ypmCookie: "";//qml不让设。
+    property string csrf_token: ""
+    property string neteaseID: ""
     property bool currentMusicLiked: false
+
 
     PlasmaCore.Dialog {
         id: menuDialog
@@ -176,11 +179,16 @@ Item {
         //     console.log("entered");
         // } //用mouseArea做试试
 
+        // width: column.implicitWidth + 40 
+        // height: column.implicitHeight + 60 
+
         Column {
+            spacing: 5
+
             PlasmaComponents.MenuItem {
                 id: userInfoMenuItem
                 visible: true
-                text: ypmLogined ? ypmUserInfo : i18n("登录")
+                text: ypmLogined ? ypmUserName : i18n("登录")
 
                 onTriggered: {
                     if (!ypmLogined) {
@@ -193,31 +201,49 @@ Item {
             PlasmaComponents.TextField {
                 id: cookieTextField
                 visible: false
-                placeholderText: i18n("输入你的YPM Cookie后按回车")
+                placeholderText: i18n("Enter your netease id")
 
                 onAccepted: {
+                    ypmLogined = true
                     userInfoMenuItem.visible = true;
                     cookieTextField.visible = false;
-                    ypmCookie = cookieTextField.text
-                    ypmLogined = true
+                    neteaseID = cookieTextField.text
                     //need to add a cookie validation in the future 
-                    console.log(ypmCookie)
                 }
             }
 
             PlasmaComponents.MenuItem {
-                id: dailySignIn
-                visible: true
-                text: i18n("每日签到(To be implemented)")
+                id: ypmCreateDays
+                visible: true // todo: 应该可以用ypmLogined做判定，但是有bug.，会导致登录后元素显示不全。先这样子吧。
             }
 
             PlasmaComponents.MenuItem {
+                id: ypmSongsListened
+                visible: true
+            }
+
+            PlasmaComponents.MenuItem {
+                id: ypmFollowed
+                visible: true
+            }
+
+            PlasmaComponents.MenuItem {
+                id: ypmFollow
+                visible: true
+            }
+            
+            PlasmaComponents.MenuItem {
                 id: logout
                 visible: true
-                text: i18n("登出")
+                text: "登出" // i18n
 
                 onTriggered: {
                     ypmLogined = false;
+                    neteaseID = ""
+                    ypmSongsListened.text = ""; //同理，原本是可以三元做的
+                    ypmFollowed.text = "";
+                    ypmFollow.text = "";
+                    ypmCreateDays.text = "";
                 }
             }
         }
@@ -225,12 +251,12 @@ Item {
 
     Timer {
         id: ypmUserInfoTimer
-        interval: 5000
+        interval: 1000
         running: false
         repeat: true
         onTriggered: {
             if (ypmLogined) {
-                getUserInfo();
+                getUserDetail();
             }
         }
     }
@@ -560,21 +586,23 @@ Item {
         service.startOperationCall(operation);
     }
 
-    function getUserInfo() {
+    function getUserDetail() {
         var xhr = new XMLHttpRequest();
-        xhr.open("GET", ypm_base_url + "/api/user/account");
-        // xhr.setRequestHeader("Cookie", ypmCookie);
+        xhr.open("GET", ypm_base_url + "/api/user/detail?uid=" + neteaseID);
         xhr.onreadystatechange = function() {
             if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
                 if (xhr.responseText && xhr.responseText !== "[]") {
                     var response = JSON.parse(xhr.responseText);
-                    console.log(JSON.stringify(response));
+                    ypmUserName = "你好， " + response.profile.nickname;
+                    ypmCreateDays.text = "您已加入云村: " + response.createDays + "天";
+                    ypmSongsListened.text = "总计听歌:" + response.listenSongs + "首";
+                    ypmFollowed.text = "粉丝: " + response.profile.followeds;
+                    ypmFollow.text =  "关注: " + response.profile.follows;
                 }
             }
         };
         xhr.send();
     }
-
 
     // function base64ToFile(base64, fileName) {
     //     let arr = base64.split(",");
