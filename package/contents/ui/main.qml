@@ -179,8 +179,8 @@ Item {
         //     console.log("entered");
         // } //用mouseArea做试试
 
-        // width: column.implicitWidth + 40 
-        // height: column.implicitHeight + 60 
+        width: column.implicitWidth
+        height: column.implicitHeight
 
         Column {
             spacing: 5
@@ -214,22 +214,27 @@ Item {
 
             PlasmaComponents.MenuItem {
                 id: ypmCreateDays
-                visible: true // todo: 应该可以用ypmLogined做判定，但是有bug.，会导致登录后元素显示不全。先这样子吧。
+                visible: true // todo: 可以用ypmLogined做判定，但是有bug。会导致登录后元素显示不全。先这样子吧。
+                                //edit: 估计是menuitem默认字体高宽的的问题。有空再搞。
+                text: ""
             }
 
             PlasmaComponents.MenuItem {
                 id: ypmSongsListened
                 visible: true
+                text: ""
             }
 
             PlasmaComponents.MenuItem {
                 id: ypmFollowed
                 visible: true
+                text: ""
             }
 
             PlasmaComponents.MenuItem {
                 id: ypmFollow
                 visible: true
+                text: "需要登录"
             }
             
             PlasmaComponents.MenuItem {
