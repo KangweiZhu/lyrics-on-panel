@@ -7,7 +7,7 @@ Kirigami.FormLayout {
 
     Text {
         id: notificationText
-        text: "[Beta Version] Please regularly check this config page and kde store to see if there is any \nfeature update or fix. "
+        text: "[Beta Version] Please regularly check this config page and kde store to see if there is any \nfeature update or fix. You can find the link of set up tutorials on github page"
         color: "red"
     }
 
@@ -32,6 +32,11 @@ Kirigami.FormLayout {
     Text {
         id: notificationText5
         text: "2. Right click this widget's  spotify/yesplaymusic icon,  open this widget's configuration, choose another mode, and then choose back."
+    }
+
+    Text {
+        id: notificationText6
+        text: "If you find this widget useful, please give it a thumbs up or star my GitHub repository! Your support is my biggest motivation to maintain this widget! If you wish to report bugs or suggest new features for this widget, feel free to post a comment on the KDE store or submit an issue on GitHub."
     }
 
 }
