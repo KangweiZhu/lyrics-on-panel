@@ -166,6 +166,7 @@ Item {
     property bool ypmLogined: false;
     property string ypmUserInfo: "anicaaz";
     property string ypmCookie: "";
+    property bool currentMusicLiked: false
 
     PlasmaCore.Dialog {
         id: menuDialog
@@ -179,7 +180,7 @@ Item {
             PlasmaComponents.MenuItem {
                 id: userInfoMenuItem
                 visible: true
-                text: ypmLogined ? userInfo : i18n("登录")
+                text: ypmLogined ? ypmUserInfo : i18n("登录")
 
                 onTriggered: {
                     if (!ypmLogined) {
@@ -222,6 +223,18 @@ Item {
         }
     }
 
+    Timer {
+        id: ypmUserInfoTimer
+        interval: 5000
+        running: false
+        repeat: true
+        onTriggered: {
+            if (ypmLogined) {
+                getUserInfo();
+            }
+        }
+    }
+
 
     Timer {
         id: schedulerTimer
@@ -231,10 +244,12 @@ Item {
         onTriggered: {
             if (config_compatibleModeChecked || config_spotifyChecked) {
                 yesPlayMusicTimer.stop();
+                ypmUserInfoTimer.stop();
                 compatibleModeTimer.start();
             } else {
                 compatibleModeTimer.stop();
                 yesPlayMusicTimer.start();
+                ypmUserInfoTimer.start();
             } 
         }
     }
@@ -543,6 +558,21 @@ Item {
         var service = mpris2Source.serviceForSource(mode);
         var operation = service.operationDescription(ops);
         service.startOperationCall(operation);
+    }
+
+    function getUserInfo() {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", ypm_base_url + "/api/user/account");
+        // xhr.setRequestHeader("Cookie", ypmCookie);
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                if (xhr.responseText && xhr.responseText !== "[]") {
+                    var response = JSON.parse(xhr.responseText);
+                    console.log(JSON.stringify(response));
+                }
+            }
+        };
+        xhr.send();
     }
 
 
