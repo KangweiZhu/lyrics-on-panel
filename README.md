@@ -1,6 +1,6 @@
 # Plasma5-Lyric-on-panel
 
-> **近乎完美地**实现了 MacOS 下 网易云音乐 的 歌词顶栏显示 功能。参考 MacOS 原生效果可以查看这篇博客：[参考链接](https://blog.csdn.net/weixin_34061200/article/details/112693092)，或者直接下载网易云音乐进行体验对比。
+> **近乎完美地**实现了 MacOS 下 网易云音乐 的 歌词顶栏显示 功能
 >
 > MacOS原效果参考：https://blog.csdn.net/weixin_34061200/article/details/112693092， 或自行下载网易云音乐进行对比。
 >
