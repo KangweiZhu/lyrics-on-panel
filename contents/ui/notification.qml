@@ -36,7 +36,7 @@ Kirigami.FormLayout {
 
     Text {
         id: notificationText6
-        text: "If you find this widget useful, please give it a thumbs up or star my GitHub repository! Your support is my biggest motivation to maintain this widget! If you wish to report bugs or suggest new features for this widget, feel free to post a comment on the KDE store or submit an issue on GitHub."
+        text: "If you find this widget useful, please give it a thumbs up and star my GitHub repository! \nIf you wish to report bugs or suggest new features for this widget, feel free to post a comment on the KDE store or submit an issue on GitHub."
     }
 
 }
