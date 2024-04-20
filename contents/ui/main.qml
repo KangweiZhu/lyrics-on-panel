@@ -16,6 +16,7 @@ PlasmoidItem {
         id: mpris2Model
     }
 
+
     readonly property string currentMediaTitle: mpris2Model.currentPlayer?.track ?? ""
 
     readonly property string currentMediaArtists: mpris2Model.currentPlayer?.artist ?? ""
@@ -266,12 +267,16 @@ PlasmoidItem {
 
     Timer {
         id: schedulerTimer
-        interval: 500
+        interval: 100
         running: true
         repeat: true
         onTriggered: {
+            //console.log(JSON.stringify())
             if (nameOfPreviousPlayer != nameOfCurrentPlayer) {
                 reset();
+            }
+            if (currentMediaTitle != previousMediaTitle || currentMediaArtists != previousMediaArtists) {
+                lyricsWTimes.clear();
             }
             nameOfPreviousPlayer = nameOfCurrentPlayer;
             if (nameOfCurrentPlayer === "yesplaymusic") {
@@ -309,7 +314,7 @@ PlasmoidItem {
         running: false
         repeat: true
         onTriggered: {
-            if (currentMediaArtists === "" && currentMediaTitle === "") {
+            if ((currentMediaArtists === "" && currentMediaTitle === "") || (currentMediaTitle != previousMediaTitle) || currentMediaArtists != previousMediaArtists) {
                 lyricText.text = "";
                 lyricsWTimes.clear();
             } else {
@@ -328,14 +333,14 @@ PlasmoidItem {
     readonly property string lrclib_base_url: "https://lrclib.net"
 
     // ui variables
-    property string backwardIcon: "../assets/media-backward.svg"
-    property string pauseIcon: "../assets/media-pause.svg"
-    property string forwardIcon: "../assets/media-forward.svg"
-    property string likeIcon: "../assets/media-like.svg"
+    property string backwardIcon: config_whiteMediaControlIconsChecked ? "../assets/media-backward-white.svg" : "../assets/media-backward.svg"
+    property string pauseIcon: config_whiteMediaControlIconsChecked ? "../assets/media-pause-white.svg" : "../assets/media-pause.svg"
+    property string forwardIcon: config_whiteMediaControlIconsChecked ? "../assets/media-forward-white.svg" : "../assets/media-forward.svg"
+    property string likeIcon: config_whiteMediaControlIconsChecked ? "../assets/media-like-white.svg" : "../assets/media-like.svg"
     property string likedIcon: "../assets/media-liked.svg"
-    property string cloudMusicIcon: "../assets/netease-cloud-music.svg"
-    property string spotifyIcon: "../assets/spotify.svg"
-    property string playIcon: "../assets/media-play.svg"
+    property string cloudMusicIcon: config_whiteMediaControlIconsChecked ? "../assets/netease-cloud-music-white.svg" : "../assets/netease-cloud-music.svg"
+    property string spotifyIcon: config_whiteMediaControlIconsChecked ? "../assets/spotify-white.svg" : "../assets/spotify.svg"
+    property string playIcon: config_whiteMediaControlIconsChecked ? "../assets/media-play-white.svg" : "../assets/media-play.svg"
     property bool liked: false;
 
     // config page variable
@@ -353,8 +358,6 @@ PlasmoidItem {
     property int config_whiteMediaControlIconsChecked: Plasmoid.configuration.whiteMediaControlIconsChecked;
 
     //Other Media Player's mpris2 data
-    property var compatibleMetaData: mpris2Source ? mpris2Source.data[mode].Metadata : undefined
-    property var compatibleData: mpris2Source.data[mode]
     property int compatibleSongTimeMS: {
         if (position == 0) {
             return -1;
@@ -382,7 +385,7 @@ PlasmoidItem {
 
     property string previousGlobalLrc: ""
 
-    property real previousSongTimeMS: 0
+    property real previousSongTimeMS: -1
 
     property bool queryFailed: false;
 
@@ -479,7 +482,6 @@ PlasmoidItem {
     function fetchLyricsCompatibleMode() {
         var xhr = new XMLHttpRequest();
         xhr.open("GET", lrcQueryUrl);
-
         xhr.onreadystatechange = function() {
             if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
                 if ((currentMediaTitle !== "Advertisement") && (previousMediaArtists !== currentMediaArtists || previousMediaTitle !== currentMediaTitle)) { //Advertisement
@@ -493,6 +495,8 @@ PlasmoidItem {
                         queryFailed = false;
                         if (response && response.length > 0 && previousLrcId !== response[0].id.toString()) { //会出现 Spotify传给Mpris的歌曲名 与 lrclib中的歌曲名不一样的情况，改用id判断
                             lyricsWTimes.clear();
+                            manualCounter = 0;
+                            firstTime = true;
                             previousMediaTitle = currentMediaTitle;
                             previousMediaArtists = currentMediaArtists;
                             previousLrcId = response[0].id.toString();
@@ -518,9 +522,22 @@ PlasmoidItem {
 
     // start lyric timer
     function startLyricDisplayTimer() {
-        if (!lyricDisplayTimer.running) {
-            lyricDisplayTimer.start();
+        if (config_yesPlayMusicChecked) {
+            if (!lyricDisplayTimer.running) {
+                if (lyricDisplayTimerGG.running) {
+                    lyricDisplayTimerGG.stop();
+                }
+                lyricDisplayTimer.start();
+            }
+        } else {
+            if (!lyricDisplayTimerGG.running) {
+                if (lyricDisplayTimer.running) {
+                    lyricDisplayTimer.stop();
+                }
+                lyricDisplayTimerGG.start();
+            }
         }
+
     }
 
     function previous() {
@@ -547,7 +564,10 @@ PlasmoidItem {
         previousLrcId = "";
         previousGlobalLrc = "";
         queryFailed = false;
-        previousSongTimeMS = 0;
+        previousSongTimeMS = -1;
+        lyricsWTimes.clear();
+        firstTime = true;
+        manualCounter = 0;
     }
 
     function getUserDetail() {
@@ -568,10 +588,12 @@ PlasmoidItem {
         xhr.send();
     }
 
+    // its broken due to the datasource issue. not my fault. Apparently both plasma browser integration and spotify haven't implement "Updating the music position" correctly.
+    // so right now, only yesplaymusic could update the position corectly.
     Timer {
         id: lyricDisplayTimer
         interval: 1
-        running: true
+        running: false
         repeat: true
         onTriggered: { 
             if (currentMediaTitle === "Advertisement") { //aim to solve Spotify non-premium bug report
@@ -581,6 +603,48 @@ PlasmoidItem {
                 previousSongTimeMS = compatibleSongTimeMS;
                 for (let i = 0; i < lyricsWTimes.count; i++) {
                     if (lyricsWTimes.get(i).time >= currentSongTime) {
+                        currentLyricIndex = i > 0 ? i - 1 : 0;
+                        if (lyricsWTimes.get(currentLyricIndex).lyric === "" || !lyricsWTimes.get(currentLyricIndex).lyric) {
+                            lyricText.text = prevNonEmptyLyric;
+                        } else {
+                            var lyric = lyricsWTimes.get(currentLyricIndex).lyric;
+                            lyricText.text = lyric;
+                            prevNonEmptyLyric = lyric;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    property int manualCounter: 0;
+    property bool firstTime: true;
+    Timer {
+        id: lyricDisplayTimerGG
+        interval: 1000
+        running: false
+        repeat: true
+        onTriggered: {
+            if (currentMediaTitle === "Advertisement") { //aim to solve Spotify non-premium bug report
+                lyricText.text = currentMediaTitle;
+            } else {
+                currentSongTime = compatibleSongTimeMS / 1000;
+                //handling the spotify bug
+                if (previousSongTimeMS == compatibleSongTimeMS) {
+                    if (firstTime) {
+                        manualCounter = currentSongTime;
+                        firstTime = false;
+                    }
+                    if (playbackStatus == 2) {
+                        manualCounter++;
+                    }
+                } else {
+                    manualCounter = currentSongTime // pause clicked, synced
+                }
+                previousSongTimeMS = compatibleSongTimeMS;
+                for (let i = 0; i < lyricsWTimes.count; i++) {
+                    if (lyricsWTimes.get(i).time >= manualCounter) {
                         currentLyricIndex = i > 0 ? i - 1 : 0;
                         if (lyricsWTimes.get(currentLyricIndex).lyric === "" || !lyricsWTimes.get(currentLyricIndex).lyric) {
                             lyricText.text = prevNonEmptyLyric;

@@ -7,17 +7,14 @@
             }
         ],
         "Category": "Multimedia",
-        "Description": "[Plasma 5 Only]A widget that could display lyrics of your Spotify | Netease Cloud Music | Elisa | etc. current-playing-song on anywhere, including kde panel and desktop. ",
+        "Description": "[Plasma 6 Only]A widget that could display lyrics of your Spotify | Netease Cloud Music | Elisa | etc. current-playing-song on anywhere, including kde panel and desktop. ",
         "Icon": "preferences-media-playback-amarok",
-        "Id": "lyrics-on-panel-plasma5",
+        "Id": "lyrics-on-panel-plasma6",
         "License": "GPLv3",
-        "Name": "lyrics-on-panel-plasma5",
-        "ServiceTypes": [
-            "Plasma/Applet"
-        ],
+        "Name": "lyrics-on-panel-plasma6",
+        "KPackageStructure": "Plasma/Applet",
         "Version": "1.0",
-        "Website": "https://github.com/KangweiZhu/lyrics-on-panel"
+        "Website": "https://github.com/KangweiZhu/lyrics-on-panel/tree/plasma6"
     },
-    "X-Plasma-API": "declarativeappletscript",
-    "X-Plasma-MainScript": "ui/main.qml"
+    "X-Plasma-API-Minimum-Version": "6.0"
 }

@@ -20,6 +20,7 @@ Kirigami.FormLayout {
     property alias cfg_mediaControllSpacing: mediaControllSpacingSpinBox.value
     property alias cfg_mediaControllItemSize: mediaControllItemSizeSpinBox.value
     property alias cfg_mediaControllItemVerticalOffset: mediaControllItemVerticalOffsetSpinBox.value
+    property alias cfg_whiteMediaControlIconsChecked: whiteMediaControlIconsChecked.checked
 
     QQC2.RadioButton {
         id: yesPlayMusicPropriataryRadioButton
@@ -34,7 +35,7 @@ Kirigami.FormLayout {
 
     QQC2.RadioButton {
         id: compatibleModeRadioButton
-        text: i18n("Global(Compatible)")
+        text: i18n("Global(Compatible) <= currently broken")
     }
 
     QQC2.SpinBox {
@@ -86,6 +87,12 @@ Kirigami.FormLayout {
             icon.name: "format-text-italic"
             checkable: true
         }
+    }
+
+    QQC2.CheckBox {
+        id: whiteMediaControlIconsChecked
+        Kirigami.FormData.label: i18n("White Media Control Icons: ")
+        checkable: true
     }
 
     // trackName	true	string	Title of the track

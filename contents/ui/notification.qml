@@ -6,6 +6,12 @@ Kirigami.FormLayout {
     id: generalPage
 
     Text {
+        id: patch-note
+        text: "[v1.0] YesPlayMusic works prefectly. Spotify and compatible mode is definitely buggy because even the plasma's self media controller is not functioning correctly under 'muti-musicplayer'conditions. My advice is to avoid openning mutilple music player at the same time.\n\n\n"
+        color: "red"
+    }
+
+    Text {
         id: notificationText
         text: "This widget is only for the Plasma6 environment. And hence will not be avilable for Plasma5. If you are in Plasma5, please search lyric-on-panel-plasma5\n\n\n"
         color: "red"
@@ -21,7 +27,7 @@ Kirigami.FormLayout {
 
     Text {
         id: notificationText3
-        text: "If you encounter any bugs, there are two ways to reset this widget.\n\n\n"
+        text: "If you encounter any bugs, there are three ways to reset this widget.\n\n\n"
     }
 
     Text {
@@ -32,6 +38,11 @@ Kirigami.FormLayout {
     Text {
         id: notificationText5
         text: "                 2. Right click this widget's  spotify/yesplaymusic icon,  open this widget's configuration, switch to another mode, and then switch back.\n\n\n"
+    }
+
+    Text {
+        id: notificationText5
+        text: "                 3. Remove this widget from your panel, and then add it back.\n\n\n"
     }
 
     Text {
