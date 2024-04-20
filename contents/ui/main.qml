@@ -28,6 +28,8 @@ PlasmoidItem {
 
     readonly property string nameOfCurrentPlayer: mpris2Model.currentPlayer?.objectName ?? ""
 
+    readonly property int position: mpris2Model.currentPlayer?.position ?? 0
+
     preferredRepresentation: fullRepresentation // Otherwise it will only display your icon declared in the metadata.json file
     Layout.preferredWidth: 0;
     Layout.preferredHeight: lyricText.contentHeight;
@@ -83,7 +85,7 @@ PlasmoidItem {
             MouseArea {
                 anchors.fill: parent
                 onClicked: {
-                    if (mpris2Source && mpris2Source.data[mode] && mpris2Source.data[mode].PlaybackStatus === "Playing") {
+                    if (playbackStatus == 2) {
                         pause();
                     } else {
                         play();
@@ -269,7 +271,11 @@ PlasmoidItem {
         running: true
         repeat: true
         onTriggered: {
-            console.log(nameOfCurrentPlayer);
+            if (nameOfPreviousPlayer != nameOfCurrentPlayer) {
+                reset();
+            }
+            nameOfPreviousPlayer = nameOfCurrentPlayer;
+            console.log(JSON.stringify(mpris2Model));
             if (config_spotifyChecked && nameOfCurrentPlayer === "spotify") {
                 yesPlayMusicTimer.stop();
                 ypmUserInfoTimer.stop();
@@ -291,7 +297,7 @@ PlasmoidItem {
 
     Timer {
         id: yesPlayMusicTimer
-        interval: 500
+        interval: 200
         running: false
         repeat: true
         onTriggered: {
@@ -308,7 +314,7 @@ PlasmoidItem {
     // compatible mode timer
     Timer {
         id: compatibleModeTimer
-        interval: 500
+        interval: 200
         running: false
         repeat: true
         onTriggered: {
@@ -323,7 +329,7 @@ PlasmoidItem {
 
     Timer {
         id: spotifyTimer
-        interval: 500
+        interval: 200
         running: false
         repeat: true
         onTriggered: {
@@ -372,7 +378,13 @@ PlasmoidItem {
     //Other Media Player's mpris2 data
     property var compatibleMetaData: mpris2Source ? mpris2Source.data[mode].Metadata : undefined
     property var compatibleData: mpris2Source.data[mode]
-    property int compatibleSongTimeMS:compatibleData ? Math.floor(compatibleData.Position / 1000) : -1
+    property int compatibleSongTimeMS: {
+        if (position == 0) {
+            return -1;
+        } else {
+            return Math.floor(position / 1000);
+        }
+    }
 
     //YesPlayMusic only, don't be misleaded. We can use ypm_base_url + /api/currentMediaYPMId to get lyrics of the current playing song, then upload it to lrclib
     property string currentMediaYPMId: ""
@@ -381,14 +393,24 @@ PlasmoidItem {
     property int currentLyricIndex: 0
 
     // variables
-    property real currentSongTime: 0
+    property real currentSongTime: 0;
+
     property string previousMediaTitle: ""
-    property string previousMediaArtists: "" 
+
+    property string previousMediaArtists: ""
+
     property string prevNonEmptyLyric: ""
+
     property string previousLrcId: ""
+
     property string previousGlobalLrc: ""
-    property bool queryFailed: false;
+
     property real previousSongTimeMS: 0
+
+    property bool queryFailed: false;
+
+    property string nameOfPreviousPlayer: ""
+
     property string base64Image: ""
 
     // lyric display mode
@@ -397,10 +419,6 @@ PlasmoidItem {
     // multiplex: global mode, depend on the current playing media. (Also priority dependent).
     property string mode: {
         if (config_yesPlayMusicChecked) { //[BUG FIXED]动态更新源，解决 多个媒体源存在于datasource时，yesplaymusic退出后重进，datasource没法更新的问题。spoity依旧unfixed.都是客户端自身的缺陷。
-            console.log("ypm checked");
-            console.log("\n\n\n\n")
-            console.log(JSON.stringify(mpris2Model));
-            console.log("\n\n\n\n")
             return mpris2Source.data["@multiplex"].Identity === "YesPlayMusic" ? "@multiplex" : "yesplaymusic";
         } 
         if (config_spotifyChecked) {
@@ -458,6 +476,7 @@ PlasmoidItem {
 
     // fetch the current media id from yesplaymusic(ypm);
     function fetchMediaIdYPM() {
+        console.log("entered");
         var xhr = new XMLHttpRequest();
         xhr.open("GET", ypm_base_url + "/player");
         xhr.onreadystatechange = function() {
@@ -566,25 +585,30 @@ PlasmoidItem {
     }
 
     function previous() {
-        serviceOps("Previous")
+        mpris2Model.currentPlayer.Previous();
     }
 
     function play() {
-        serviceOps("Play")
+        mpris2Model.currentPlayer.Play();
     }
 
     function pause() {
-        serviceOps("Pause")
+        mpris2Model.currentPlayer.Pause();
     }
 
     function next() {
-        serviceOps("Next")
+        mpris2Model.currentPlayer.Next();
     }
 
-    function serviceOps(ops) {
-        var service = mpris2Source.serviceForSource(mode);
-        var operation = service.operationDescription(ops);
-        service.startOperationCall(operation);
+    function reset() {
+        currentSongTime = 0;
+        previousMediaTitle = "";
+        previousMediaArtists = "";
+        prevNonEmptyLyric = "";
+        previousLrcId = "";
+        previousGlobalLrc = "";
+        queryFailed = false;
+        previousSongTimeMS = 0;
     }
 
     function getUserDetail() {
