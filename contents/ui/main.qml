@@ -6,32 +6,29 @@ import QtQuick.Window 2.15
 import org.kde.plasma.core 2.0 as PlasmaCore
 import org.kde.plasma.plasmoid 2.0
 import org.kde.plasma.components 3.0 as PlasmaComponents
+import org.kde.plasma.plasma5support as Plasma5Support
+import org.kde.plasma.private.mpris as Mpris
 
-Item { 
+PlasmoidItem {
     id: root
-    // connect to mpris2 source
-    PlasmaCore.DataSource {
-        id: mpris2Source
-        engine: "mpris2"
-        connectedSources: sources
-        interval: 1 
 
-        onConnectedSourcesChanged: {
-            currentMediaYPMId = "";
-            previousMediaTitle = "";
-            previousMediaArtists = ""; 
-            prevNonEmptyLyric = "";
-            previousLrcId = "";
-            queryFailed = false;
-        }
-
-        // triggered when there is a change in data. Prefect place for debugging
-        onDataChanged: {
-            
-        }
+    Mpris.Mpris2Model {
+        id: mpris2Model
     }
 
-    Plasmoid.preferredRepresentation: Plasmoid.fullRepresentation // Otherwise it will only display your icon declared in the metadata.json file
+    readonly property string currentMediaTitle: mpris2Model.currentPlayer?.track ?? ""
+
+    readonly property string currentMediaArtists: mpris2Model.currentPlayer?.artist ?? ""
+
+    readonly property string currentMediaAlbum: mpris2Model.currentPlayer?.album ?? ""
+
+    readonly property int playbackStatus: mpris2Model.currentPlayer?.playbackStatus ?? 0
+
+    readonly property bool isPlaying: root.playbackStatus === Mpris.PlaybackStatus.Playing
+
+    readonly property string nameOfCurrentPlayer: mpris2Model.currentPlayer?.objectName ?? ""
+
+    preferredRepresentation: fullRepresentation // Otherwise it will only display your icon declared in the metadata.json file
     Layout.preferredWidth: 0;
     Layout.preferredHeight: lyricText.contentHeight;
     
@@ -76,7 +73,7 @@ Item {
         }
 
         Image {
-            source: (mpris2Source && mpris2Source.data[mode] && mpris2Source.data[mode].PlaybackStatus === "Playing") ? pauseIcon : playIcon
+            source: (playbackStatus == 2) ? pauseIcon : playIcon
             sourceSize.width: config_mediaControllItemSize
             sourceSize.height: config_mediaControllItemSize
             anchors.left: parent.left
@@ -266,22 +263,29 @@ Item {
         }
     }
 
-
     Timer {
         id: schedulerTimer
         interval: 500
         running: true
         repeat: true
         onTriggered: {
-            if (config_compatibleModeChecked || config_spotifyChecked) {
+            console.log(nameOfCurrentPlayer);
+            if (config_spotifyChecked && nameOfCurrentPlayer === "spotify") {
                 yesPlayMusicTimer.stop();
                 ypmUserInfoTimer.stop();
-                compatibleModeTimer.start();
-            } else {
                 compatibleModeTimer.stop();
+                spotifyTimer.start();
+            } else if (config_yesPlayMusicChecked && nameOfCurrentPlayer === "yesplaymusic"){
+                compatibleModeTimer.stop();
+                spotifyTimer.stop();
                 yesPlayMusicTimer.start();
                 ypmUserInfoTimer.start();
-            } 
+            } else if (config_compatibleModeChecked) {
+                yesPlayMusicTimer.stop();
+                ypmUserInfoTimer.stop();
+                spotifyTimer.stop();
+                compatibleModeTimer.start();
+            }
         }
     }
 
@@ -292,7 +296,7 @@ Item {
         repeat: true
         onTriggered: {
             compatibleModeTimer.stop();
-            if (currentMediaArtists === "No artists" && currentMediaTitle === "No title") {
+            if (currentMediaArtists === "" && currentMediaTitle === "") {
                 lyricText.text = "";
                 lyricsWTimes.clear();
             } else {
@@ -308,7 +312,22 @@ Item {
         running: false
         repeat: true
         onTriggered: {
-            if (currentMediaArtists === "No artists" && currentMediaTitle === "No title") {
+            if (currentMediaArtists === "" && currentMediaTitle === "") {
+                lyricText.text = "";
+                lyricsWTimes.clear();
+            } else {
+                fetchLyricsCompatibleMode();
+            }
+        }
+    }
+
+    Timer {
+        id: spotifyTimer
+        interval: 500
+        running: false
+        repeat: true
+        onTriggered: {
+            if (currentMediaArtists === "" && currentMediaTitle === "") {
                 lyricText.text = "";
                 lyricsWTimes.clear();
             } else {
@@ -378,7 +397,11 @@ Item {
     // multiplex: global mode, depend on the current playing media. (Also priority dependent).
     property string mode: {
         if (config_yesPlayMusicChecked) { //[BUG FIXED]动态更新源，解决 多个媒体源存在于datasource时，yesplaymusic退出后重进，datasource没法更新的问题。spoity依旧unfixed.都是客户端自身的缺陷。
-            return mpris2Source.data["@multiplex"].Identity === "YesPlayMusic" ? "@multiplex" : "yesplaymusic"; 
+            console.log("ypm checked");
+            console.log("\n\n\n\n")
+            console.log(JSON.stringify(mpris2Model));
+            console.log("\n\n\n\n")
+            return mpris2Source.data["@multiplex"].Identity === "YesPlayMusic" ? "@multiplex" : "yesplaymusic";
         } 
         if (config_spotifyChecked) {
             return "spotify"; 
@@ -387,33 +410,6 @@ Item {
             return "@multiplex";
         }
         return "@multiplex";
-    }
-
-    // title of current media
-    property string currentMediaTitle: {
-        if (compatibleData && compatibleMetaData["xesam:title"]) {
-            return compatibleMetaData["xesam:title"];
-        } else {
-            return "No title";
-        }
-    }
-
-    // artist of current media
-    property string currentMediaArtists: {
-        if (compatibleData && compatibleMetaData["xesam:artist"]) {
-            return compatibleMetaData["xesam:artist"].toString();
-        } else {
-            return "No artists";
-        }
-    }
-
-    // album name of current media
-    property string currentMediaAlbum: {
-        if (compatibleData && compatibleMetaData["xesam:album"]) {
-            return compatibleMetaData["xesam:album"];
-        } else {
-            return "No Album";
-        }
     }
 
     // construct the lrclib's request url
@@ -608,55 +604,6 @@ Item {
         };
         xhr.send();
     }
-
-    // function base64ToFile(base64, fileName) {
-    //     let arr = base64.split(",");
-    //     let mime = arr[0].match(/:(.\*?);/)[1];
-    //     let bstr = atob(arr[1]);
-    //     let n = bstr.length;
-    //     let u8arr = new Uint8Array(n);
-
-    //     while (n--) {
-    //       u8arr[n] = bstr.charCodeAt(n);
-    //     }
-    //     return new File([u8arr], fileName, { type: mime });
-    // }
-
-    // function getYPMQRKey() {
-    //     console.log("entered 1")
-    //     var xhr = new XMLHttpRequest();
-    //     xhr.open("GET", ypm_base_url + "/api/login/qr/key?timestamp=" + new Date().getTime());
-    //     xhr.onreadystatechange = function() {
-    //         if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-    //             var response = JSON.parse(xhr.responseText);
-    //             if (response && response.data && response.data.unikey) {
-    //                 console.log(response.data.unikey);
-    //                 loginQrCodeCreate(response.data.unikey);
-    //                 //parseAndUpload(response.lrc.lyric);
-    //             }
-    //         }
-    //     };
-    //     xhr.send();
-    // }
-    // property string prevImage: ""
-
-    // function loginQrCodeCreate(unikey) {
-    //     var xhr = new XMLHttpRequest();
-    //     xhr.open("GET", ypm_base_url + "/api/login/qr/create?qrimg=" + unikey + "&timestamp=" + new Date().getTime());
-    //     console.log(ypm_base_url + "/api/login/qr/create?qrimg=" + unikey + "&timestamp=" + new Date().getTime())
-    //     xhr.onreadystatechange = function() {
-    //         if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-    //             var response = JSON.parse(xhr.responseText)
-    //             if (response && response.data && response.data.qrimg) {
-    //                 base64Image = response.data.qrimg;
-    //                 console.log(base64Image === prevImage);
-    //                 prevImage = base64Image;
-    //                 qrCodeDialog.open();
-    //             }
-    //         }
-    //     };
-    //     xhr.send();
-    // }
 
     Timer {
         id: lyricDisplayTimer
