@@ -7,7 +7,7 @@ Kirigami.FormLayout {
 
     Text {
         id: notificationText
-        text: "[Beta Version] Please regularly check this config page and kde store to see if there is any \nfeature update or fix. You can find the link of set up tutorials on github page"
+        text: "This widget is only for the Plasma6 environment. And hence will not be avilable for Plasma5. If you are in Plasma5, please search lyric-on-panel-plasma5\n\n\n"
         color: "red"
     }
 
@@ -15,28 +15,27 @@ Kirigami.FormLayout {
 
     Text {
         id: notificationText2
-        text: "[Note to YesPlayMusic Users only]: Please close Network Global Proxy and use Proxy with Rules.\nYPM has knowing defects for handling proxy and will likely to cause this widget unable to \nfetch lyric from YPM localhost api.:"
+        text: "[Note to YesPlayMusic Users only]: Please close Network Global Proxy and use Proxy with Rules.YPM has knowing defects for handling proxy and will likely to cause this widget unable to fetch lyric from YPM localhost api.\n\n\n"
         color: "red"
     }
 
     Text {
         id: notificationText3
-        text: "If you encounter any bugs, there are two ways to reset this widget."
+        text: "If you encounter any bugs, there are two ways to reset this widget.\n\n\n"
     }
 
     Text {
         id: notificationText4
-        text: "1. in terminal: enter  plasmashell --replace"
+        text: "                 1. in terminal: enter  plasmashell --replace\n\n\n"
     }
 
     Text {
         id: notificationText5
-        text: "2. Right click this widget's  spotify/yesplaymusic icon,  open this widget's configuration, choose another mode, and then choose back."
+        text: "                 2. Right click this widget's  spotify/yesplaymusic icon,  open this widget's configuration, switch to another mode, and then switch back.\n\n\n"
     }
 
     Text {
         id: notificationText6
-        text: "If you find this widget useful, please give it a thumbs up and star my GitHub repository! \nIf you wish to report bugs or suggest new features for this widget, feel free to post a comment on the KDE store or submit an issue on GitHub."
+        text: "If you find this widget useful, please give it a thumbs up and star my GitHub repository! If you wish to report bugs or suggest new features for this widget, feel free to post a comment on the KDE store or submit an issue on GitHub.\n\n\n"
     }
-
 }

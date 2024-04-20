@@ -169,7 +169,6 @@ PlasmoidItem {
     property string neteaseID: ""
     property bool currentMusicLiked: false
 
-
     PlasmaCore.Dialog {
         id: menuDialog
         visible: false
@@ -275,21 +274,13 @@ PlasmoidItem {
                 reset();
             }
             nameOfPreviousPlayer = nameOfCurrentPlayer;
-            console.log(JSON.stringify(mpris2Model));
-            if (config_spotifyChecked && nameOfCurrentPlayer === "spotify") {
-                yesPlayMusicTimer.stop();
-                ypmUserInfoTimer.stop();
+            if (nameOfCurrentPlayer === "yesplaymusic") {
                 compatibleModeTimer.stop();
-                spotifyTimer.start();
-            } else if (config_yesPlayMusicChecked && nameOfCurrentPlayer === "yesplaymusic"){
-                compatibleModeTimer.stop();
-                spotifyTimer.stop();
                 yesPlayMusicTimer.start();
                 ypmUserInfoTimer.start();
-            } else if (config_compatibleModeChecked) {
+            } else {
                 yesPlayMusicTimer.stop();
                 ypmUserInfoTimer.stop();
-                spotifyTimer.stop();
                 compatibleModeTimer.start();
             }
         }
@@ -314,21 +305,6 @@ PlasmoidItem {
     // compatible mode timer
     Timer {
         id: compatibleModeTimer
-        interval: 200
-        running: false
-        repeat: true
-        onTriggered: {
-            if (currentMediaArtists === "" && currentMediaTitle === "") {
-                lyricText.text = "";
-                lyricsWTimes.clear();
-            } else {
-                fetchLyricsCompatibleMode();
-            }
-        }
-    }
-
-    Timer {
-        id: spotifyTimer
         interval: 200
         running: false
         repeat: true
@@ -374,6 +350,7 @@ PlasmoidItem {
     property int config_mediaControllItemSize: Plasmoid.configuration.mediaControllItemSize
     property int config_mediaControllItemVerticalOffset: Plasmoid.configuration.mediaControllItemVerticalOffset;
     property int config_lyricTextVerticalOffset: Plasmoid.configuration.lyricTextVerticalOffset
+    property int config_whiteMediaControlIconsChecked: Plasmoid.configuration.whiteMediaControlIconsChecked;
 
     //Other Media Player's mpris2 data
     property var compatibleMetaData: mpris2Source ? mpris2Source.data[mode].Metadata : undefined
@@ -413,23 +390,6 @@ PlasmoidItem {
 
     property string base64Image: ""
 
-    // lyric display mode
-    // yesplaymusic: only yesplaymusic's lyric
-    // spotify: only spotify's lyric
-    // multiplex: global mode, depend on the current playing media. (Also priority dependent).
-    property string mode: {
-        if (config_yesPlayMusicChecked) { //[BUG FIXED]动态更新源，解决 多个媒体源存在于datasource时，yesplaymusic退出后重进，datasource没法更新的问题。spoity依旧unfixed.都是客户端自身的缺陷。
-            return mpris2Source.data["@multiplex"].Identity === "YesPlayMusic" ? "@multiplex" : "yesplaymusic";
-        } 
-        if (config_spotifyChecked) {
-            return "spotify"; 
-        }
-        if (config_compatibleModeChecked) {
-            return "@multiplex";
-        }
-        return "@multiplex";
-    }
-
     // construct the lrclib's request url
     property string lrcQueryUrl: {
         if (queryFailed) { // 如果失败了就用歌名做一次模糊查询。lrclib只支持模糊查询一个field.所以只能专辑|歌手名|歌名选一个， 很明显歌名的结果最准确。
@@ -450,27 +410,6 @@ PlasmoidItem {
             return currentMediaTitle;
         } else {
             return "This song doesn't have any lyric";
-        }
-    }
-
-    // [Feature haven't been implemented]
-    // Case: When we are unable to find the correspond lyric via lrclib api while we are listening to the music from YESPLAYMUSIC(YPM). 
-    // Then what we gonna do is to attempt to fetch the lyric from the "YPM lyric api" which is exposed to our localhost.
-    // Then if we indeed find the correspond lyric, we will first post this lyric to liclib. So everyone later on will be able to 
-    // get the lyric of this song once playing this musik at any media streaming platform. (Similar to p2p underlying principles)   
-    // This function should be rarely called since it is a very edge case(Iterally speaking lyrics for every popular song have already been inside lrclib), so we don't care about the performance.
-    // We should be careful when doing this since we don't want to ruin lrclib database.
-    function isMediaFromYPM() {
-        var ypmData = mpris2Source && mpris2Source.data["yesplaymusic"];
-        var multiplexData = mpris2Source && mpris2Source.multiplexSourceKey;
-
-        if (ypmData && multiplexData &&
-            multiplexData.Identity === "YesPlayMusic" &&
-            multiplexData["Source Name"] === "yesplaymusic" &&
-            ypmData.PlaybackStatus === "Playing" &&
-            multiplexData.PlaybackStatus === "Playing" &&
-            currentMediaTitle === ypmData.Metadata["xesam:title"]) {
-            //fetchMediaIdYPM();
         }
     }
 
