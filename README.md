@@ -57,7 +57,5 @@ As for installing the widget, you will have 2 approaches:
 
 
 
-### 3. Developer Notes
 
-> As we can see up to 5/20/2024 there are already several popular linux distributions e.g. Manjaro update their stable update channel from Plasma5 environemnt to Plasma6. In Plasma6 the mpris2 implementation changed and is defientely buggy since even more kde's own media controller widget has defect and broken. 
 
