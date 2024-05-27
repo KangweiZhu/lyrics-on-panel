@@ -16,7 +16,6 @@ PlasmoidItem {
         id: mpris2Model
     }
 
-
     property string currentMediaTitle: mpris2Model.currentPlayer?.track ?? ""
 
     property string currentMediaArtists: mpris2Model.currentPlayer?.artist ?? ""
@@ -267,7 +266,7 @@ PlasmoidItem {
 
     Timer {
         id: schedulerTimer
-        interval: 3000
+        interval: 1
         running: true
         repeat: true
         onTriggered: {
@@ -502,15 +501,15 @@ PlasmoidItem {
 
     function fetchLyricsCompatibleMode() {
         var xhr = new XMLHttpRequest();
-        console.log("entered fetchlyrics cm");
+        console.log("Entered fetchlyrics compatible mode.");
         xhr.open("GET", lrcQueryUrl);
         xhr.onreadystatechange = function() {
             if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-                console.log("Network OK");
+                console.log("[Compatible Mode] Network OK!");
                 if ((currentMediaTitle !== "Advertisement") && !isCompatibleLRCFound) { //Advertisement
-                    console.log("Start parsing fetch result");
+                    console.log("Start parsing fetch result.");
                     if (!xhr.responseText || xhr.responseText === "[]") {
-                        console.log("failed to get the lyrics");
+                        console.log("[Compatible Mode] Failed to get the lyrics.");
                         queryFailed = true;
                         previousLrcId = Number.MIN_VALUE;
                         lyricsWTimes.clear();
@@ -520,9 +519,7 @@ PlasmoidItem {
                         queryFailed = false;
                         if (response && response.length > 0 && previousLrcId !== response[0].id.toString()) { //会出现 Spotify传给Mpris的歌曲名 与 lrclib中的歌曲名不一样的情况，改用id判断
                             lyricsWTimes.clear();
-                            manualCounter = 0;
-                            console.log("get the desired lyric");
-                            firstTime = true;
+                            console.log("[Compatible Mode] Get the desired lyric!");
                             previousMediaTitle = currentMediaTitle;
                             previousMediaArtists = currentMediaArtists;
                             previousLrcId = response[0].id.toString();
