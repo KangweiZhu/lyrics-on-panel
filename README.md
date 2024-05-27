@@ -17,6 +17,12 @@
 
 
 
+## 0. Change Log
+
+See here: [ChangeLog](./ChangeLog.md)
+
+
+
 ## 1. Screen Shortcuts
 
 * Fullscreen Shortcuts
