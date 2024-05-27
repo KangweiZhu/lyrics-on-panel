@@ -75,7 +75,7 @@ PlasmoidItem {
         }
 
         Image {
-            source: (playbackStatus == 2) ? pauseIcon : playIcon
+            source: (playbackStatus == 2 && !isWrongPlayer()) ? pauseIcon : playIcon
             sourceSize.width: config_mediaControllItemSize
             sourceSize.height: config_mediaControllItemSize
             anchors.left: parent.left
@@ -142,7 +142,21 @@ PlasmoidItem {
             MouseArea {
                 anchors.fill: parent
                 onClicked: {
-                    var globalPos = mediaPlayerIcon.mapToGlobal(0, 0);
+                    // switchDisplay = !switchDisplay;
+                    // if (switchDisplay) {
+                    //     lyricsWTimes.clear();
+                    //     lyricText.text = currentMediaTitle + " - " + currentMediaArtists;
+                    // } else {
+                    //     if (config_yesPlayMusicChecked) {
+                    //         isYPMLyricFound = false;
+                    //     } else {
+                    //         isCompatibleLRCFound = false;
+                    //     }
+                    // }
+                    //var globalPos = mediaPlayerIcon.mapToGlobal(0, 0);
+                    
+                    // Temporarily remove in v1.1.3
+                    // [v1.1.3] Click spotify icon => swtich display mode. 
                     if (config_yesPlayMusicChecked) {
                         menuDialog.x = globalPos.x;
                         menuDialog.y = globalPos.y * 3.5;
@@ -153,12 +167,14 @@ PlasmoidItem {
                             dialogShowed = false;
                             menuDialog.close();
                         }
-                        
-                    }
+                    } 
                 }
             }
         }
     }
+
+    // [v1.1.3] Click spotify icon => swtich display mode. 
+    property bool switchDisplay: false;
 
     // variables that are neccessary for ypm like/dislike and others new features in the future
     property bool dialogShowed: false;
@@ -274,32 +290,40 @@ PlasmoidItem {
             // Some music player doesnt not actively sending the position to our datasource. 
             // So we have to actively retrieve the correct position.
             mpris2Model.currentPlayer.updatePosition();
-            log();
+            //log();
             if (nameOfPreviousPlayer != nameOfCurrentPlayer) {
+                nameOfPreviousPlayer = nameOfCurrentPlayer;
                 reset();
             }
-            if (currentMediaTitle != previousMediaTitle || currentMediaArtists != previousMediaArtists) {
-                console.log("Update current media artist and title");
-                if (config_compatibleModeChecked || config_spotifyChecked) {
-                    isCompatibleLRCFound = false;
-                    previousMediaTitle = currentMediaTitle;
-                    previousMediaArtists = currentMediaArtists;
-                }
-                lyricsWTimes.clear();
-            }
-            nameOfPreviousPlayer = nameOfCurrentPlayer;
-            if (nameOfCurrentPlayer === "yesplaymusic") {
+            if (prevExpectedPlayerName != currExpectedPlayerName) {
+                prevExpectedPlayerName = currExpectedPlayerName;
                 compatibleModeTimer.stop();
-                yesPlayMusicTimer.start();
-                ypmUserInfoTimer.start();
-            } else {
                 yesPlayMusicTimer.stop();
                 ypmUserInfoTimer.stop();
-                compatibleModeTimer.start();
+                reset();
+                if (currExpectedPlayerName === "yesplaymusic") {
+                    yesPlayMusicTimer.start();
+                    //ypmUserInfoTimer.start();
+                } else {
+                    compatibleModeTimer.start();
+                }
+            }
+            if (currentMediaTitle != previousMediaTitle || currentMediaArtists != previousMediaArtists) {
+                //console.log("Update current media artist and title");
+                if (config_compatibleModeChecked || config_spotifyChecked) {
+                    isCompatibleLRCFound = false;
+                } else {
+                    isYPMLyricFound = false;
+                }
+                previousMediaTitle = currentMediaTitle;
+                previousMediaArtists = currentMediaArtists;
+                lyricsWTimes.clear();
             }
         }
     }
 
+    property bool isYPMLyricFound: false;
+    
     Timer {
         id: yesPlayMusicTimer
         interval: 200
@@ -311,7 +335,9 @@ PlasmoidItem {
                 lyricText.text = "";
                 lyricsWTimes.clear();
             } else {
-                fetchMediaIdYPM();  
+                if (!isYPMLyricFound) {
+                    fetchMediaIdYPM();  
+                }
             }
         }
     }
@@ -343,6 +369,11 @@ PlasmoidItem {
     // List/Map that storing [{timestamp: xxx, lyric: xxx}, {timestamp: xxx, lyric: xxx}, {timestamp: xxx, lyric: xxx}]
     ListModel {
         id: lyricsWTimes
+    }
+
+    // todo: cache the current listModel
+    ListModel {
+        id: cachedlyricsWTimes
     }
 
     // Global constant
@@ -408,6 +439,19 @@ PlasmoidItem {
 
     property string base64Image: ""
 
+    property string prevExpectedPlayerName: "";
+
+    // 0: ypm   1: spotify 2: compatible
+    property string currExpectedPlayerName: {
+        if (config_yesPlayMusicChecked) {
+            return "yesplaymusic";
+        } else if (config_spotifyChecked) {
+            return "spotify";
+        } else {
+            return "compatible";
+        }
+    }
+
     // construct the lrclib's request url
     property string lrcQueryUrl: {
         if (queryFailed) { // 如果失败了就用歌名做一次模糊查询。lrclib只支持模糊查询一个field.所以只能专辑|歌手名|歌名选一个， 很明显歌名的结果最准确。
@@ -433,7 +477,7 @@ PlasmoidItem {
 
     // fetch the current media id from yesplaymusic(ypm);
     function fetchMediaIdYPM() {
-        console.log("Start fetching YPM music id");
+        //console.log("Start fetching YPM music id");
         var xhr = new XMLHttpRequest();
         xhr.open("GET", ypm_base_url + "/player");
         xhr.onreadystatechange = function() {
@@ -444,7 +488,7 @@ PlasmoidItem {
                         previousMediaTitle = currentMediaTitle;
                         previousMediaArtists = currentMediaArtists;
                         currentMediaYPMId = response.currentTrack.id;
-                        console.log("Successfully fetched YPM music id");
+                        //console.log("Successfully fetched YPM music id");
                         fetchSyncLyricYPM();
                     }
                 }
@@ -455,16 +499,17 @@ PlasmoidItem {
 
     // fetch the current media lyric from yesplaymusic by media id
     function fetchSyncLyricYPM() {
-        console.log("Start fetching YPM lyric");
+        //console.log("Start fetching YPM lyric");
         var xhr = new XMLHttpRequest();
         xhr.open("GET", ypm_base_url + "/api/lyric?id=" + currentMediaYPMId);
         xhr.onreadystatechange = function() {
             if (xhr.status === 200) {
                 var response = JSON.parse(xhr.responseText);
-                console.log("YPM Network OK");
+                //console.log("YPM Network OK");
                 if (response && response.lrc && response.lrc.lyric) {
                     lyricsWTimes.clear();
-                    console.log("Successfully fetched YPM lyrics");
+                    //console.log("Successfully fetched YPM lyrics");
+                    isYPMLyricFound = true;
                     parseLyric(response.lrc.lyric);
                     //parseAndUpload(response.lrc.lyric);
                 }
@@ -475,7 +520,7 @@ PlasmoidItem {
 
     //[Feature haven't been implemented]
     function parseAndUpload(ypmLrc) {
-        console.log("Ypm Lrc", ypmLrc);
+        //console.log("Ypm Lrc", ypmLrc);
     }
 
     function likeMusicYPM() {
@@ -486,7 +531,7 @@ PlasmoidItem {
     // parse the lyric
     // [["[00:26.64] first row of lyric\n"]], ["[00:29.70] second row of lyric\n]"],etc...]
     function parseLyric(lyrics) {
-        console.log("Start parsing Lyrics");
+        //console.log("Start parsing Lyrics");
         var lrcList = lyrics.split("\n");
         for (var i = 0; i < lrcList.length; i++) {
             var lyricPerRowWTime = lrcList[i].split("]");
@@ -501,15 +546,15 @@ PlasmoidItem {
 
     function fetchLyricsCompatibleMode() {
         var xhr = new XMLHttpRequest();
-        console.log("Entered fetchlyrics compatible mode.");
+        //console.log("Entered fetchlyrics compatible mode.");
         xhr.open("GET", lrcQueryUrl);
         xhr.onreadystatechange = function() {
             if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-                console.log("[Compatible Mode] Network OK!");
+                //console.log("[Compatible Mode] Network OK!");
                 if ((currentMediaTitle !== "Advertisement") && !isCompatibleLRCFound) { //Advertisement
-                    console.log("Start parsing fetch result.");
+                    //console.log("Start parsing fetch result.");
                     if (!xhr.responseText || xhr.responseText === "[]") {
-                        console.log("[Compatible Mode] Failed to get the lyrics.");
+                        //console.log("[Compatible Mode] Failed to get the lyrics.");
                         queryFailed = true;
                         previousLrcId = Number.MIN_VALUE;
                         lyricsWTimes.clear();
@@ -519,7 +564,7 @@ PlasmoidItem {
                         queryFailed = false;
                         if (response && response.length > 0 && previousLrcId !== response[0].id.toString()) { //会出现 Spotify传给Mpris的歌曲名 与 lrclib中的歌曲名不一样的情况，改用id判断
                             lyricsWTimes.clear();
-                            console.log("[Compatible Mode] Get the desired lyric!");
+                            //console.log("[Compatible Mode] Get the desired lyric!");
                             previousMediaTitle = currentMediaTitle;
                             previousMediaArtists = currentMediaArtists;
                             previousLrcId = response[0].id.toString();
@@ -545,19 +590,39 @@ PlasmoidItem {
     }
 
     function previous() {
-        mpris2Model.currentPlayer.Previous();
+        if (!isWrongPlayer()) {
+           mpris2Model.currentPlayer.Previous(); 
+        }
     }
 
     function play() {
-        mpris2Model.currentPlayer.Play();
+        if (!isWrongPlayer()) {
+           mpris2Model.currentPlayer.Play(); 
+        }
     }
 
     function pause() {
-        mpris2Model.currentPlayer.Pause();
+        if (!isWrongPlayer()) {
+            mpris2Model.currentPlayer.Pause();
+        }
     }
 
     function next() {
-        mpris2Model.currentPlayer.Next();
+        if (!isWrongPlayer()) {
+            mpris2Model.currentPlayer.Next();
+        }
+    }
+
+    // [v1.1.3] Fix the problem of current playing media doesn't match the selected mode.
+    function isWrongPlayer() {
+        if (nameOfCurrentPlayer != currExpectedPlayerName) {
+            if (currExpectedPlayerName == "compatible") {
+                return false;
+            } else {
+                return true;
+            }
+        } 
+        return false;
     }
 
     function reset() {
@@ -568,6 +633,9 @@ PlasmoidItem {
         previousGlobalLrc = "";
         queryFailed = false;
         lyricsWTimes.clear();
+        lyricText.text = "";
+        isCompatibleLRCFound = false;
+        isYPMLyricFound = false;
     }
 
     function getUserDetail() {

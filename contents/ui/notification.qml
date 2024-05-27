@@ -7,7 +7,7 @@ Kirigami.FormLayout {
 
     Text {
         id: patch-note
-        text: "[v1.0] YesPlayMusic works prefectly. Spotify and compatible mode is definitely buggy because even the plasma's self media controller is not functioning correctly under 'muti-musicplayer'conditions. My advice is to avoid openning mutilple music player at the same time.\n\n\n"
+        text: "[v1.1.3]"
         color: "red"
     }
 
