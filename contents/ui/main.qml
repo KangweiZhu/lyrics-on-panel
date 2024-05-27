@@ -267,17 +267,20 @@ PlasmoidItem {
 
     Timer {
         id: schedulerTimer
-        interval: 100
+        interval: 3000
         running: true
         repeat: true
         onTriggered: {
             //console.log(JSON.stringify(mpris2Model))
+            // Some music player doesnt not actively sending the position to our datasource. 
+            // So we have to actively retrieve the correct position.
+            mpris2Model.currentPlayer.updatePosition();
             log();
             if (nameOfPreviousPlayer != nameOfCurrentPlayer) {
                 reset();
             }
             if (currentMediaTitle != previousMediaTitle || currentMediaArtists != previousMediaArtists) {
-                //console.log("update current media artist and title");
+                console.log("Update current media artist and title");
                 if (config_compatibleModeChecked || config_spotifyChecked) {
                     isCompatibleLRCFound = false;
                     previousMediaTitle = currentMediaTitle;
@@ -328,6 +331,7 @@ PlasmoidItem {
         running: false
         repeat: true
         onTriggered: {
+            yesPlayMusicTimer.stop();
             if ((currentMediaArtists === "" && currentMediaTitle === "") || (currentMediaTitle != previousMediaTitle) || currentMediaArtists != previousMediaArtists) {
                 lyricText.text = "";
                 lyricsWTimes.clear();
@@ -372,11 +376,11 @@ PlasmoidItem {
     property int config_whiteMediaControlIconsChecked: Plasmoid.configuration.whiteMediaControlIconsChecked;
 
     //Other Media Player's mpris2 data
-    property int compatibleSongTimeMS: {
+    property int mprisCurrentPlayingSongTimeMS: {
         if (position == 0) {
             return -1;
         } else {
-            return Math.floor(position / 1000);
+            return Math.floor(position / 1000000);
         }
     }
 
@@ -386,20 +390,15 @@ PlasmoidItem {
     //Use to search the next row of lyric in lyricsWTimes
     property int currentLyricIndex: 0
 
-    // variables
-    property real currentSongTime: 0;
+    property string previousMediaTitle: ""
 
-    property string previousMediaTitle: "avoidnullfxxx"
-
-    property string previousMediaArtists: "avoidnullfxxx"
+    property string previousMediaArtists: ""
 
     property string prevNonEmptyLyric: ""
 
     property string previousLrcId: ""
 
     property string previousGlobalLrc: ""
-
-    property real previousSongTimeMS: -1
 
     // indicating we need to use the back up fetching strategy
     property bool queryFailed: false;
@@ -435,17 +434,18 @@ PlasmoidItem {
 
     // fetch the current media id from yesplaymusic(ypm);
     function fetchMediaIdYPM() {
-        console.log("entered");
+        console.log("Start fetching YPM music id");
         var xhr = new XMLHttpRequest();
         xhr.open("GET", ypm_base_url + "/player");
         xhr.onreadystatechange = function() {
             if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
                 if (xhr.responseText) {
                     var response = JSON.parse(xhr.responseText);
-                    if (response && response.currentTrack && response.currentTrack.name === currentMediaTitle && (previousMediaArtists !== currentMediaArtists || previousMediaTitle !== currentMediaTitle)) {
+                    if (response && response.currentTrack && response.currentTrack.name === currentMediaTitle) {
                         previousMediaTitle = currentMediaTitle;
                         previousMediaArtists = currentMediaArtists;
                         currentMediaYPMId = response.currentTrack.id;
+                        console.log("Successfully fetched YPM music id");
                         fetchSyncLyricYPM();
                     }
                 }
@@ -456,13 +456,16 @@ PlasmoidItem {
 
     // fetch the current media lyric from yesplaymusic by media id
     function fetchSyncLyricYPM() {
+        console.log("Start fetching YPM lyric");
         var xhr = new XMLHttpRequest();
         xhr.open("GET", ypm_base_url + "/api/lyric?id=" + currentMediaYPMId);
         xhr.onreadystatechange = function() {
             if (xhr.status === 200) {
                 var response = JSON.parse(xhr.responseText);
+                console.log("YPM Network OK");
                 if (response && response.lrc && response.lrc.lyric) {
                     lyricsWTimes.clear();
+                    console.log("Successfully fetched YPM lyrics");
                     parseLyric(response.lrc.lyric);
                     //parseAndUpload(response.lrc.lyric);
                 }
@@ -484,6 +487,7 @@ PlasmoidItem {
     // parse the lyric
     // [["[00:26.64] first row of lyric\n"]], ["[00:29.70] second row of lyric\n]"],etc...]
     function parseLyric(lyrics) {
+        console.log("Start parsing Lyrics");
         var lrcList = lyrics.split("\n");
         for (var i = 0; i < lrcList.length; i++) {
             var lyricPerRowWTime = lrcList[i].split("]");
@@ -493,7 +497,7 @@ PlasmoidItem {
                 lyricsWTimes.append({time: timestamp, lyric: lyricPerRow});
             }
         }
-        startLyricDisplayTimer();
+        lyricDisplayTimer.start()
     }
 
     function fetchLyricsCompatibleMode() {
@@ -543,26 +547,6 @@ PlasmoidItem {
         return minutes * 60 + seconds;
     }
 
-    // start lyric timer
-    function startLyricDisplayTimer() {
-        if (config_yesPlayMusicChecked) {
-            if (!lyricDisplayTimer.running) {
-                if (lyricDisplayTimerGG.running) {
-                    lyricDisplayTimerGG.stop();
-                }
-                lyricDisplayTimer.start();
-            }
-        } else {
-            if (!lyricDisplayTimerGG.running) {
-                if (lyricDisplayTimer.running) {
-                    lyricDisplayTimer.stop();
-                }
-                lyricDisplayTimerGG.start();
-            }
-        }
-
-    }
-
     function previous() {
         mpris2Model.currentPlayer.Previous();
     }
@@ -580,17 +564,13 @@ PlasmoidItem {
     }
 
     function reset() {
-        currentSongTime = 0;
         previousMediaTitle = "";
         previousMediaArtists = "";
         prevNonEmptyLyric = "";
         previousLrcId = "";
         previousGlobalLrc = "";
         queryFailed = false;
-        previousSongTimeMS = -1;
         lyricsWTimes.clear();
-        firstTime = true;
-        manualCounter = 0;
     }
 
     function getUserDetail() {
@@ -611,70 +591,25 @@ PlasmoidItem {
         xhr.send();
     }
 
-    // its broken due to the datasource issue. not my fault. Apparently both plasma browser integration and spotify haven't implement "Updating the music position" correctly.
-    // so right now, only yesplaymusic could update the position corectly.
     Timer {
         id: lyricDisplayTimer
         interval: 1
         running: false
         repeat: true
         onTriggered: { 
-            if (currentMediaTitle === "Advertisement") { //aim to solve Spotify non-premium bug report
+            if (currentMediaTitle === "Advertisement") { // Aim to solve Spotify non-premium bug report
                 lyricText.text = currentMediaTitle;
             } else {
-                currentSongTime = compatibleSongTimeMS / 1000;
-                previousSongTimeMS = compatibleSongTimeMS;
                 for (let i = 0; i < lyricsWTimes.count; i++) {
-                    if (lyricsWTimes.get(i).time >= currentSongTime) {
+                    if (lyricsWTimes.get(i).time >= mprisCurrentPlayingSongTimeMS) {
                         currentLyricIndex = i > 0 ? i - 1 : 0;
-                        if (lyricsWTimes.get(currentLyricIndex).lyric === "" || !lyricsWTimes.get(currentLyricIndex).lyric) {
+                        var currentLWT = lyricsWTimes.get(currentLyricIndex);
+                        var currentLyric = currentLWT.lyric;
+                        if (!currentLWT || !currentLyric || currentLyric === "" && prevNonEmptyLyric != "") {
                             lyricText.text = prevNonEmptyLyric;
                         } else {
-                            var lyric = lyricsWTimes.get(currentLyricIndex).lyric;
-                            lyricText.text = lyric;
-                            prevNonEmptyLyric = lyric;
-                        }
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-    property int manualCounter: 0;
-    property bool firstTime: true;
-    Timer {
-        id: lyricDisplayTimerGG
-        interval: 1000
-        running: false
-        repeat: true
-        onTriggered: {
-            if (currentMediaTitle === "Advertisement") { //aim to solve Spotify non-premium bug report
-                lyricText.text = currentMediaTitle;
-            } else {
-                currentSongTime = compatibleSongTimeMS / 1000;
-                //handling the spotify bug
-                if (previousSongTimeMS == compatibleSongTimeMS) {
-                    if (firstTime) {
-                        manualCounter = currentSongTime;
-                        firstTime = false;
-                    }
-                    if (playbackStatus == 2) {
-                        manualCounter++;
-                    }
-                } else {
-                    manualCounter = currentSongTime // pause clicked, synced
-                }
-                previousSongTimeMS = compatibleSongTimeMS;
-                for (let i = 0; i < lyricsWTimes.count; i++) {
-                    if (lyricsWTimes.get(i).time >= manualCounter) {
-                        currentLyricIndex = i > 0 ? i - 1 : 0;
-                        if (lyricsWTimes.get(currentLyricIndex).lyric === "" || !lyricsWTimes.get(currentLyricIndex).lyric) {
-                            lyricText.text = prevNonEmptyLyric;
-                        } else {
-                            var lyric = lyricsWTimes.get(currentLyricIndex).lyric;
-                            lyricText.text = lyric;
-                            prevNonEmptyLyric = lyric;
+                            lyricText.text = currentLyric;
+                            prevNonEmptyLyric = currentLyric;
                         }
                         break;
                     }
