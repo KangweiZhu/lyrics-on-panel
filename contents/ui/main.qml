@@ -17,19 +17,19 @@ PlasmoidItem {
     }
 
 
-    readonly property string currentMediaTitle: mpris2Model.currentPlayer?.track ?? ""
+    property string currentMediaTitle: mpris2Model.currentPlayer?.track ?? ""
 
-    readonly property string currentMediaArtists: mpris2Model.currentPlayer?.artist ?? ""
+    property string currentMediaArtists: mpris2Model.currentPlayer?.artist ?? ""
 
-    readonly property string currentMediaAlbum: mpris2Model.currentPlayer?.album ?? ""
+    property string currentMediaAlbum: mpris2Model.currentPlayer?.album ?? ""
 
-    readonly property int playbackStatus: mpris2Model.currentPlayer?.playbackStatus ?? 0
+    property int playbackStatus: mpris2Model.currentPlayer?.playbackStatus ?? 0
 
-    readonly property bool isPlaying: root.playbackStatus === Mpris.PlaybackStatus.Playing
+    property bool isPlaying: root.playbackStatus === Mpris.PlaybackStatus.Playing
 
-    readonly property string nameOfCurrentPlayer: mpris2Model.currentPlayer?.objectName ?? ""
+    property string nameOfCurrentPlayer: mpris2Model.currentPlayer?.objectName ?? ""
 
-    readonly property int position: mpris2Model.currentPlayer?.position ?? 0
+    property int position: mpris2Model.currentPlayer?.position ?? 0
 
     preferredRepresentation: fullRepresentation // Otherwise it will only display your icon declared in the metadata.json file
     Layout.preferredWidth: 0;
@@ -271,11 +271,18 @@ PlasmoidItem {
         running: true
         repeat: true
         onTriggered: {
-            //console.log(JSON.stringify())
+            //console.log(JSON.stringify(mpris2Model))
+            log();
             if (nameOfPreviousPlayer != nameOfCurrentPlayer) {
                 reset();
             }
             if (currentMediaTitle != previousMediaTitle || currentMediaArtists != previousMediaArtists) {
+                //console.log("update current media artist and title");
+                if (config_compatibleModeChecked || config_spotifyChecked) {
+                    isCompatibleLRCFound = false;
+                    previousMediaTitle = currentMediaTitle;
+                    previousMediaArtists = currentMediaArtists;
+                }
                 lyricsWTimes.clear();
             }
             nameOfPreviousPlayer = nameOfCurrentPlayer;
@@ -307,6 +314,13 @@ PlasmoidItem {
         }
     }
 
+    function log() {
+        console.log("currentMediaArtists: ", currentMediaArtists);
+        console.log("previousMediaArtists: ", previousMediaArtists);
+        console.log("currentMediaTitle: ", currentMediaTitle);
+        console.log("previousMediaTitle: ", previousMediaTitle);
+    }
+    
     // compatible mode timer
     Timer {
         id: compatibleModeTimer
@@ -375,9 +389,9 @@ PlasmoidItem {
     // variables
     property real currentSongTime: 0;
 
-    property string previousMediaTitle: ""
+    property string previousMediaTitle: "avoidnullfxxx"
 
-    property string previousMediaArtists: ""
+    property string previousMediaArtists: "avoidnullfxxx"
 
     property string prevNonEmptyLyric: ""
 
@@ -387,7 +401,10 @@ PlasmoidItem {
 
     property real previousSongTimeMS: -1
 
+    // indicating we need to use the back up fetching strategy
     property bool queryFailed: false;
+
+    property bool isCompatibleLRCFound: false;
 
     property string nameOfPreviousPlayer: ""
 
@@ -481,11 +498,15 @@ PlasmoidItem {
 
     function fetchLyricsCompatibleMode() {
         var xhr = new XMLHttpRequest();
+        console.log("entered fetchlyrics cm");
         xhr.open("GET", lrcQueryUrl);
         xhr.onreadystatechange = function() {
             if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-                if ((currentMediaTitle !== "Advertisement") && (previousMediaArtists !== currentMediaArtists || previousMediaTitle !== currentMediaTitle)) { //Advertisement
+                console.log("Network OK");
+                if ((currentMediaTitle !== "Advertisement") && !isCompatibleLRCFound) { //Advertisement
+                    console.log("Start parsing fetch result");
                     if (!xhr.responseText || xhr.responseText === "[]") {
+                        console.log("failed to get the lyrics");
                         queryFailed = true;
                         previousLrcId = Number.MIN_VALUE;
                         lyricsWTimes.clear();
@@ -496,10 +517,12 @@ PlasmoidItem {
                         if (response && response.length > 0 && previousLrcId !== response[0].id.toString()) { //会出现 Spotify传给Mpris的歌曲名 与 lrclib中的歌曲名不一样的情况，改用id判断
                             lyricsWTimes.clear();
                             manualCounter = 0;
+                            console.log("get the desired lyric");
                             firstTime = true;
                             previousMediaTitle = currentMediaTitle;
                             previousMediaArtists = currentMediaArtists;
                             previousLrcId = response[0].id.toString();
+                            isCompatibleLRCFound = true;
                             parseLyric(response[0].syncedLyrics);
                         } else {
                             lyricsWTimes.clear();
