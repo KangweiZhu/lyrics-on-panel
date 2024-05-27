@@ -21,9 +21,15 @@
 
 See here: [ChangeLog](./ChangeLog.md)
 
+## 1. Installation Guide
 
+As for installing the widget, you will have 2 approaches:
 
-## 1. Screen Shortcuts
+1. Use the GUI operation recommended by the KDE official website at [this link](https://userbase.kde.org/Plasma/Installing_Plasmoids).
+
+2. In the terminal, type `kpackagetool5 -t Plasma/Applet -i xxxx`, replacing `xxxx` with the path to your extracted folder. e.g. `/home/anicaa/.local/share/plasma/plasmoids/lyrics-on-panel-master`.
+
+## 2. Screen Shortcuts
 
 * Fullscreen Shortcuts
 
