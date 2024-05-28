@@ -6,7 +6,7 @@
 >
 > ![Lyric-on-panel效果](img/image-20240317195128194.png "Lyric-on-panel")
 >
-> ![image-20240529024709115](img/image-20240529024709115.png)
+> ![alt text](img/image-panel-onlythiswidget.png)
 >
 > ![网易云音乐效果](https://img-blog.csdnimg.cn/img_convert/d98c4b5b7d938727d008214573453c57.png "网易云音乐效果")
 >
