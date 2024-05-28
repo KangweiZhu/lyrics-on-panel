@@ -11,7 +11,7 @@ ConfigModel {
     }
 
     ConfigCategory {
-        name: i18n("Developer-Note")
+        name: i18n("Change-Log & Tutorials")
         icon: "note"
         source: "notification.qml"
     }

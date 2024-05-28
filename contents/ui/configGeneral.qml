@@ -21,6 +21,7 @@ Kirigami.FormLayout {
     property alias cfg_mediaControllItemSize: mediaControllItemSizeSpinBox.value
     property alias cfg_mediaControllItemVerticalOffset: mediaControllItemVerticalOffsetSpinBox.value
     property alias cfg_whiteMediaControlIconsChecked: whiteMediaControlIconsChecked.checked
+    property alias cfg_preferedWidgetWidth: preferedWidgetWidthTextField.text
 
     QQC2.RadioButton {
         id: yesPlayMusicPropriataryRadioButton
@@ -93,6 +94,11 @@ Kirigami.FormLayout {
         id: whiteMediaControlIconsChecked
         Kirigami.FormData.label: i18n("White Media Control Icons: ")
         checkable: true
+    }
+
+    QQC2.TextField {
+        id: preferedWidgetWidthTextField
+        Kirigami.FormData.label: i18n("Prefered Widget Width: ")
     }
 
     // trackName	true	string	Title of the track

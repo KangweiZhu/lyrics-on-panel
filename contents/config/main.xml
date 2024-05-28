@@ -39,11 +39,14 @@
         <entry name="whiteMediaControlIconsChecked" type="Bool">
             <default>false</default>
         </entry>
+        <entry name="preferedWidgetWidth" type="String">
+            <default>550</default>
+        </entry>
     </group>
 
-    <group name="Notification">
+    <!-- <group name="Notification">
         <entry name="compatibleModeRadioButton" type="Bool">
             <default>false</default>
         </entry>
-    </group>
+    </group> -->
 </kcfg>

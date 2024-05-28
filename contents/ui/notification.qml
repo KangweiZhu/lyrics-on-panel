@@ -6,47 +6,39 @@ Kirigami.FormLayout {
     id: generalPage
 
     Text {
-        id: patch-note
-        text: "[v1.1.3]"
+        id: notificationText
+        text: "This widget is only for the Plasma6 environment and will not be available for Plasma5. If you are in Plasma5, please search for lyric-on-panel-plasma5. \n\nDue to the Plasma API change, I refactored much of the code and only kept the core lyric querying logic. Therefore, please expect some differences in the quality of these two versions of the widgets. \n\nI am currently busy looking for an internship, so my temporary goal is to make this widget usable. I apologize for not having much time to explore the new Plasma API. \nIf time allows, I will try to make the implementation of several logics more elegant and add more functionality by integrating C++ into this widget."
         color: "red"
     }
 
     Text {
-        id: notificationText
-        text: "This widget is only for the Plasma6 environment. And hence will not be avilable for Plasma5. If you are in Plasma5, please search lyric-on-panel-plasma5\n\n\n"
-        color: "red"
+        id: latestVersionUpdate
+        text: "\n[v1.1.3] 05/29/2024 - Major Bug Fix, Improve Accuracy.\n\n    1. Removed the Developer-note section in the configuration page and added a Changelog & tutorial section.\n\n    2. Now, if you switch from YesPlayMusic mode to Spotify mode, we will first pause the currently playing music from YesPlayMusic. Then, you need to manually open Spotify and click the play (resume) button. Vice versa.\n\n    3. Fixed the problem where lyrics from Spotify would still appear even when the mode is switched to YesPlayMusic.\n\n    4. Now you can control the width of this widget on the configuration page.\n\n\n"
     }
-
-    //[Note to YesPlayMusic Users only]: Please close Network Global Proxy and use Proxy with Rules. \n YPM has knowing defects for handling proxy and will likely to cause this widget unable to fetch lyric from YPM localhost api.:"
 
     Text {
         id: notificationText2
-        text: "[Note to YesPlayMusic Users only]: Please close Network Global Proxy and use Proxy with Rules.YPM has knowing defects for handling proxy and will likely to cause this widget unable to fetch lyric from YPM localhost api.\n\n\n"
+        text: "[Note to YesPlayMusic Users only]: Please close Network Global Proxy and use Proxy with Rules. YPM has known defects for handling proxy and will likely cause this widget to be unable to fetch lyrics from YPM localhost API."
         color: "red"
+    }
+
+    Text {
+        id: notificationH2
+        text: "If you encounter any bugs, feel free to let me know. There are two ways to reset this widget:\n"
     }
 
     Text {
         id: notificationText3
-        text: "If you encounter any bugs, there are three ways to reset this widget.\n\n\n"
+        text: "         1. In terminal, enter: plasmashell --replace"
     }
 
     Text {
         id: notificationText4
-        text: "                 1. in terminal: enter  plasmashell --replace\n\n\n"
+        text: "         2. Remove this widget from your panel and add it back."
     }
 
     Text {
         id: notificationText5
-        text: "                 2. Right click this widget's  spotify/yesplaymusic icon,  open this widget's configuration, switch to another mode, and then switch back.\n\n\n"
-    }
-
-    Text {
-        id: notificationText5
-        text: "                 3. Remove this widget from your panel, and then add it back.\n\n\n"
-    }
-
-    Text {
-        id: notificationText6
-        text: "If you find this widget useful, please give it a thumbs up and star my GitHub repository! If you wish to report bugs or suggest new features for this widget, feel free to post a comment on the KDE store or submit an issue on GitHub.\n\n\n"
+        text: "\n\n\nIf you find this widget useful, please give it a thumbs up and star my GitHub repository! For bug reports or feature suggestions, post a comment on the KDE store or submit an issue on GitHub."
     }
 }

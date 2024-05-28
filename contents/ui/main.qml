@@ -16,6 +16,11 @@ PlasmoidItem {
         id: mpris2Model
     }
 
+    // Todo: [v1.1.4]
+    Mpris.MultiplexerModel {
+        id: multiplexerModel
+    }
+
     property string currentMediaTitle: mpris2Model.currentPlayer?.track ?? ""
 
     property string currentMediaArtists: mpris2Model.currentPlayer?.artist ?? ""
@@ -31,7 +36,7 @@ PlasmoidItem {
     property int position: mpris2Model.currentPlayer?.position ?? 0
 
     preferredRepresentation: fullRepresentation // Otherwise it will only display your icon declared in the metadata.json file
-    Layout.preferredWidth: 0;
+    Layout.preferredWidth: config_preferedWidgetWidth;
     Layout.preferredHeight: lyricText.contentHeight;
     
     width: 0;
@@ -281,43 +286,59 @@ PlasmoidItem {
     }
 
     Timer {
+        id: positionTimer
+        interval: 1
+        running: true
+        repeat: true
+        onTriggered: {
+            // Some music player doesnt not actively sending the position to our datasource. 
+            // So we have to actively retrieve the correct position.
+            mpris2Model.currentPlayer.updatePosition();
+        }
+    }
+
+    Timer {
         id: schedulerTimer
         interval: 1
         running: true
         repeat: true
         onTriggered: {
-            //console.log(JSON.stringify(mpris2Model))
-            // Some music player doesnt not actively sending the position to our datasource. 
-            // So we have to actively retrieve the correct position.
-            mpris2Model.currentPlayer.updatePosition();
+            // console.log(JSON.stringify(multiplexerModel))
+            // console.log(multiplexerModel);
+            // console.log(multiplexerModel.toString());
             //log();
+            // 如果 mpris 里面， 当前播放器和之前的播放器不一样，就重置。
+            if (!currentMediaTitle && !currentMediaArtists) {
+                mpris2Model.currentPlayer.Pause();
+            }
             if (nameOfPreviousPlayer != nameOfCurrentPlayer) {
                 nameOfPreviousPlayer = nameOfCurrentPlayer;
                 reset();
             }
+            // 如果 设置 里面， 当前播放器和之前设置的播放器不一样，就重置。
             if (prevExpectedPlayerName != currExpectedPlayerName) {
                 prevExpectedPlayerName = currExpectedPlayerName;
-                compatibleModeTimer.stop();
-                yesPlayMusicTimer.stop();
-                ypmUserInfoTimer.stop();
+                mpris2Model.currentPlayer.Pause();
                 reset();
-                if (currExpectedPlayerName === "yesplaymusic") {
-                    yesPlayMusicTimer.start();
-                    //ypmUserInfoTimer.start();
-                } else {
-                    compatibleModeTimer.start();
-                }
             }
+            // 前后歌名不一样， 重置。
             if (currentMediaTitle != previousMediaTitle || currentMediaArtists != previousMediaArtists) {
                 //console.log("Update current media artist and title");
-                if (config_compatibleModeChecked || config_spotifyChecked) {
-                    isCompatibleLRCFound = false;
-                } else {
-                    isYPMLyricFound = false;
-                }
+                reset();
                 previousMediaTitle = currentMediaTitle;
                 previousMediaArtists = currentMediaArtists;
-                lyricsWTimes.clear();
+                if (currExpectedPlayerName === "yesplaymusic") {
+                    if (nameOfCurrentPlayer === "yesplaymusic") {
+                        lyricText.text = " ";
+                        lyricsWTimes.clear();
+                        yesPlayMusicTimer.start();
+                        ypmUserInfoTimer.start();
+                    }
+                } else {        
+                    if (nameOfCurrentPlayer !== "yesplaymusic") {
+                        compatibleModeTimer.start();
+                    }
+                }
             }
         }
     }
@@ -332,7 +353,7 @@ PlasmoidItem {
         onTriggered: {
             compatibleModeTimer.stop();
             if (currentMediaArtists === "" && currentMediaTitle === "") {
-                lyricText.text = "";
+                lyricText.text = " ";
                 lyricsWTimes.clear();
             } else {
                 if (!isYPMLyricFound) {
@@ -356,12 +377,13 @@ PlasmoidItem {
         running: false
         repeat: true
         onTriggered: {
-            yesPlayMusicTimer.stop();
             if ((currentMediaArtists === "" && currentMediaTitle === "") || (currentMediaTitle != previousMediaTitle) || currentMediaArtists != previousMediaArtists) {
-                lyricText.text = "";
+                lyricText.text = " ";
                 lyricsWTimes.clear();
             } else {
-                fetchLyricsCompatibleMode();
+                if (!isCompatibleLRCFound || queryFailed) {
+                    fetchLyricsCompatibleMode();
+                }
             }
         }
     }
@@ -404,6 +426,7 @@ PlasmoidItem {
     property int config_mediaControllItemVerticalOffset: Plasmoid.configuration.mediaControllItemVerticalOffset;
     property int config_lyricTextVerticalOffset: Plasmoid.configuration.lyricTextVerticalOffset
     property int config_whiteMediaControlIconsChecked: Plasmoid.configuration.whiteMediaControlIconsChecked;
+    property int config_preferedWidgetWidth: Plasmoid.configuration.preferedWidgetWidth;
 
     //Other Media Player's mpris2 data
     property int mprisCurrentPlayingSongTimeMS: {
@@ -413,6 +436,13 @@ PlasmoidItem {
             return Math.floor(position / 1000000);
         }
     }
+
+    // [v1.1.3] Store the all the indexes in mpris2Model
+    property int compatibleIndex: -3;
+
+    property int spotifyIndex: -2;
+
+    property int ypmIndex: -1;
 
     //YesPlayMusic only, don't be misleaded. We can use ypm_base_url + /api/currentMediaYPMId to get lyrics of the current playing song, then upload it to lrclib
     property string currentMediaYPMId: ""
@@ -427,8 +457,6 @@ PlasmoidItem {
     property string prevNonEmptyLyric: ""
 
     property string previousLrcId: ""
-
-    property string previousGlobalLrc: ""
 
     // indicating we need to use the back up fetching strategy
     property bool queryFailed: false;
@@ -626,14 +654,17 @@ PlasmoidItem {
     }
 
     function reset() {
+        //console.log("entered")
+        compatibleModeTimer.stop();
+        yesPlayMusicTimer.stop();
+        ypmUserInfoTimer.stop();
         previousMediaTitle = "";
         previousMediaArtists = "";
+        lyricsWTimes.clear();
         prevNonEmptyLyric = "";
         previousLrcId = "";
-        previousGlobalLrc = "";
         queryFailed = false;
-        lyricsWTimes.clear();
-        lyricText.text = "";
+        lyricText.text = " ";
         isCompatibleLRCFound = false;
         isYPMLyricFound = false;
     }
