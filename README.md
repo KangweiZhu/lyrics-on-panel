@@ -6,7 +6,7 @@
 >
 > ![Lyric-on-panel效果](img/image-20240317195128194.png "Lyric-on-panel")**lyrics-on-panel-plasma5 效果**
 >
-> ![image-20240529024709115](../img/image-20240529024709115.png)**lyrcis-on-panel-plasma6 + panel colorizer效果。**
+> ![image-20240529024709115](img/image-20240529024709115.png)**lyrcis-on-panel-plasma6 + panel colorizer效果。**
 >
 > ![网易云音乐效果](https://img-blog.csdnimg.cn/img_convert/d98c4b5b7d938727d008214573453c57.png "网易云音乐效果")**MacOS网易云音乐效果**
 >
@@ -43,7 +43,7 @@ As for installing the widget, you will have 2 approaches:
 
 > "Most likely will be able to display the lyric that that Spotify does not show."
 
-![image-20240529024104188](../img/image-20240529024104188.png)
+![image-20240529024104188](img/image-20240529024104188.png)
 
 * Under Plasma5
 
@@ -55,9 +55,9 @@ As for installing the widget, you will have 2 approaches:
 
 ![image-20240317192935566](img/image-20240317192935566.png "Panel shortcut")
 
-![image-20240529023754367](../img/image-20240529023754367.png)
+![image-20240529023754367](img/image-20240529023754367.png)
 
-![image-20240529023819659](../img/image-20240529023819659.png)
+![image-20240529023819659](img/image-20240529023819659.png)
 
 ---
 
@@ -69,6 +69,6 @@ As for installing the widget, you will have 2 approaches:
 
 ### 2.4 Freedom of Customizing every component of this widget
 
-![image-20240529023657784](../img/image-20240529023657784.png)
+![image-20240529023657784](img/image-20240529023657784.png)
 
 ---
