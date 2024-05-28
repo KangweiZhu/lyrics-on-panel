@@ -1,15 +1,11 @@
 # Plasma6-Lyric-on-panel
+![alt text](img/image-panel-onlythiswidget.png)
+
 > 适配最新的 **Plasma6** 桌面环境, Plasma5版本请移步 **master branch**
 >
 > **近乎完美地**实现了 MacOS 下 网易云音乐 的 歌词顶栏显示 功能
 >
-> MacOS原效果参考：https://blog.csdn.net/weixin_34061200/article/details/112693092 或自行下载网易云音乐进行对比。
->
-> ![Lyric-on-panel效果](img/image-20240317195128194.png "Lyric-on-panel")
->
-> ![alt text](img/image-panel-onlythiswidget.png)
->
-> ![网易云音乐效果](https://img-blog.csdnimg.cn/img_convert/d98c4b5b7d938727d008214573453c57.png "网易云音乐效果")
+> MacOS原效果参考：https://blog.csdn.net/weixin_34061200/article/details/112693092 
 >
 > 采用两套逻辑： 
 >
