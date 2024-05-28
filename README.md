@@ -4,11 +4,11 @@
 >
 > MacOS原效果参考：https://blog.csdn.net/weixin_34061200/article/details/112693092 或自行下载网易云音乐进行对比。
 >
-> ![Lyric-on-panel效果](img/image-20240317195128194.png "Lyric-on-panel")**lyrics-on-panel-plasma5 效果**
+> ![Lyric-on-panel效果](img/image-20240317195128194.png "Lyric-on-panel")
 >
-> ![image-20240529024709115](img/image-20240529024709115.png)**lyrcis-on-panel-plasma6 + panel colorizer效果。**
+> ![image-20240529024709115](img/image-20240529024709115.png)
 >
-> ![网易云音乐效果](https://img-blog.csdnimg.cn/img_convert/d98c4b5b7d938727d008214573453c57.png "网易云音乐效果")**MacOS网易云音乐效果**
+> ![网易云音乐效果](https://img-blog.csdnimg.cn/img_convert/d98c4b5b7d938727d008214573453c57.png "网易云音乐效果")
 >
 > 采用两套逻辑： 
 >
