@@ -1,6 +1,7 @@
 # Plasma5-Lyric-on-panel
 
 ### 0. Developer Notes for Plasma5
+> For plasma6, move here https://github.com/KangweiZhu/lyrics-on-panel/tree/plasma6.
 
 > As we can see, up to 5/20/2024, several popular Linux distributions have updated their stable channels from the Plasma 5 environment to Plasma 6. The **API related to MPRIS2 in Plasma 6** has changed and is definitely buggy, as many software, such as Spotify, seem not to **implement it correctly**. However, embracing new versions is the motto of all rolling release distributions. The next step is since this widget received approximately **800+ downloads in total** in one and a half months (which is definitely good for a pet project), I will try to refactor or at least optimize the codebase of the Plasma 5 version of this widget. Then, I will cease updates for Plasma 5 and focus on fixing known defects and adding features to the Plasma 6 version.
 
