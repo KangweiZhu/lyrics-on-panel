@@ -6,20 +6,21 @@ import QtQuick.Window 2.15
 import org.kde.plasma.core 2.0 as PlasmaCore
 import org.kde.plasma.plasmoid 2.0
 import org.kde.plasma.components 3.0 as PlasmaComponents
+import QtGraphicalEffects 1.12
 
-Item { 
+Item {
     id: root
     // connect to mpris2 source
     PlasmaCore.DataSource {
         id: mpris2Source
         engine: "mpris2"
         connectedSources: sources
-        interval: 1 
+        interval: 1
 
         onConnectedSourcesChanged: {
             currentMediaYPMId = "";
             previousMediaTitle = "";
-            previousMediaArtists = ""; 
+            previousMediaArtists = "";
             prevNonEmptyLyric = "";
             previousLrcId = "";
             queryFailed = false;
@@ -27,21 +28,21 @@ Item {
 
         // triggered when there is a change in data. Prefect place for debugging
         onDataChanged: {
-            
+
         }
     }
 
     Plasmoid.preferredRepresentation: Plasmoid.fullRepresentation // Otherwise it will only display your icon declared in the metadata.json file
     Layout.preferredWidth: 0;
     Layout.preferredHeight: lyricText.contentHeight;
-    
+
     width: 0;
     height: lyricText.contentHeight;
 
     Text {
         id: lyricText
         text: "Please open the configuration of this widget and read the developer's note!"
-        color: config_lyricTextColor
+        color: PlasmaCore.ColorScope.textColor
         font.pixelSize: config_lyricTextSize
         font.bold: config_lyricTextBold
         font.italic: config_lyricTextItalic
@@ -61,11 +62,18 @@ Item {
         anchors.verticalCenterOffset: config_mediaControllItemVerticalOffset
 
         Image {
+            id: backwardImage
             source: backwardIcon
-            sourceSize.width: config_mediaControllItemSize //不能用width, 锯齿太严重，直接控制图片渲染svg的大小
+            sourceSize.width: config_mediaControllItemSize
             sourceSize.height: config_mediaControllItemSize
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
+
+            ColorOverlay {
+                anchors.fill: backwardImage
+                source: backwardImage
+                color: PlasmaCore.ColorScope.textColor
+            }
 
             MouseArea {
                 anchors.fill: parent
@@ -76,6 +84,7 @@ Item {
         }
 
         Image {
+            id: playPauseImage
             source: (mpris2Source && mpris2Source.data[mode] && mpris2Source.data[mode].PlaybackStatus === "Playing") ? pauseIcon : playIcon
             sourceSize.width: config_mediaControllItemSize
             sourceSize.height: config_mediaControllItemSize
@@ -83,83 +92,105 @@ Item {
             anchors.leftMargin: config_mediaControllItemSize + config_mediaControllSpacing
             anchors.verticalCenter: parent.verticalCenter
 
+            ColorOverlay {
+                anchors.fill: playPauseImage
+                source: playPauseImage
+                color: PlasmaCore.ColorScope.textColor
+            }
+
             MouseArea {
                 anchors.fill: parent
                 onClicked: {
                     if (mpris2Source && mpris2Source.data[mode] && mpris2Source.data[mode].PlaybackStatus === "Playing") {
                         pause();
                     } else {
-                        play();
-                    }
-                }
-            }
-        }
-
-        Image {
-            source: forwardIcon
-            sourceSize.width: config_mediaControllItemSize
-            sourceSize.height: config_mediaControllItemSize
-            anchors.left: parent.left
-            anchors.leftMargin: 2 * (config_mediaControllItemSize + config_mediaControllSpacing)
-            anchors.verticalCenter: parent.verticalCenter
-
-            MouseArea {
-                anchors.fill: parent
-                onClicked: {
-                    next();
-                }
-            }
-        }
-
-        Image {
-            source: liked ? likedIcon : likeIcon
-            sourceSize.width: config_mediaControllItemSize
-            sourceSize.height: config_mediaControllItemSize
-            anchors.left: parent.left
-            anchors.leftMargin: 3 * (config_mediaControllItemSize + config_mediaControllSpacing)
-            anchors.verticalCenter: parent.verticalCenter
-
-            MouseArea {
-                anchors.fill: parent
-                onClicked: {
-                    if (liked) {
-                        liked = false;
-                    } else {
-                        liked = true;
-                    }
-                }
-            }
-        }
-
-        Image {
-            id: mediaPlayerIcon
-            source: config_yesPlayMusicChecked ? cloudMusicIcon : spotifyIcon
-            sourceSize.width: config_mediaControllItemSize
-            sourceSize.height: config_mediaControllItemSize
-            anchors.left: parent.left
-            anchors.leftMargin: 4 * (config_mediaControllItemSize + config_mediaControllSpacing)
-            anchors.verticalCenter: parent.verticalCenter
-
-            MouseArea {
-                anchors.fill: parent
-                onClicked: {
-                    var globalPos = mediaPlayerIcon.mapToGlobal(0, 0);
-                    if (config_yesPlayMusicChecked) {
-                        menuDialog.x = globalPos.x;
-                        menuDialog.y = globalPos.y * 3.5;
-                        if (!dialogShowed) { //苯办法了，后面看下怎么判定失去焦点
-                            menuDialog.show(); 
-                            dialogShowed = true;
-                        } else {
-                            dialogShowed = false;
-                            menuDialog.close();
-                        }
-                        
-                    }
+                    play();
                 }
             }
         }
     }
+
+    Image {
+        id: forwardImage
+        source: forwardIcon
+        sourceSize.width: config_mediaControllItemSize
+        sourceSize.height: config_mediaControllItemSize
+        anchors.left: parent.left
+        anchors.leftMargin: 2 * (config_mediaControllItemSize + config_mediaControllSpacing)
+        anchors.verticalCenter: parent.verticalCenter
+
+        ColorOverlay {
+            anchors.fill: forwardImage
+            source: forwardImage
+            color: PlasmaCore.ColorScope.textColor
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            onClicked: {
+                next();
+            }
+        }
+    }
+
+    Image {
+        id: likeImage
+        source: liked ? likedIcon : likeIcon
+        sourceSize.width: config_mediaControllItemSize
+        sourceSize.height: config_mediaControllItemSize
+        anchors.left: parent.left
+        anchors.leftMargin: 3 * (config_mediaControllItemSize + config_mediaControllSpacing)
+        anchors.verticalCenter: parent.verticalCenter
+
+        ColorOverlay {
+            anchors.fill: likeImage
+            source: likeImage
+            color: liked ? "red" : PlasmaCore.ColorScope.textColor
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            onClicked: {
+                liked = !liked
+            }
+        }
+    }
+
+    Image {
+        id: mediaPlayerIcon
+        source: config_yesPlayMusicChecked ? cloudMusicIcon : spotifyIcon
+        sourceSize.width: config_mediaControllItemSize
+        sourceSize.height: config_mediaControllItemSize
+        anchors.left: parent.left
+        anchors.leftMargin: 4 * (config_mediaControllItemSize + config_mediaControllSpacing)
+        anchors.verticalCenter: parent.verticalCenter
+        
+        ColorOverlay {
+            anchors.fill: mediaPlayerIcon
+            source: mediaPlayerIcon
+            color: PlasmaCore.ColorScope.textColor
+        }
+        
+        MouseArea {
+            anchors.fill: parent
+            onClicked: {
+                var globalPos = mediaPlayerIcon.mapToGlobal(0, 0);
+                if (config_yesPlayMusicChecked) {
+                    menuDialog.x = globalPos.x;
+                    menuDialog.y = globalPos.y * 3.5;
+                    if (!dialogShowed) { //苯办法了，后面看下怎么判定失去焦点
+                    menuDialog.show();
+                    dialogShowed = true;
+                } else {
+                dialogShowed = false;
+                menuDialog.close();
+                }
+
+                }
+            }
+        }
+    }
+}
 
     // variables that are neccessary for ypm like/dislike and others new features in the future
     property bool dialogShowed: false;
