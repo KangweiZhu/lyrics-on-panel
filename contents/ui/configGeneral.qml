@@ -26,46 +26,46 @@ Kirigami.FormLayout {
     QQC2.RadioButton {
         id: yesPlayMusicPropriataryRadioButton
         Kirigami.FormData.label: i18n("Modes: ")
-        text: i18n("YesPlayMusic(YPM) Only")
+        text: i18n("YesPlayMusic(YPM)")
     }
 
     QQC2.RadioButton {
         id: spotifyPropriataryRadioButton
-        text: i18n("Spotify Only")
+        text: i18n("Spotify")
     }
 
     QQC2.RadioButton {
         id: compatibleModeRadioButton
-        text: i18n("Global(Compatible) <= currently broken")
+        text: i18n("Global (currently broken)")
     }
 
     QQC2.SpinBox {
         id: lyricTextSizeSpinBox
-        Kirigami.FormData.label: i18n("Lyric Text Size: ")
+        Kirigami.FormData.label: i18n("Lyric text size: ")
     }
 
     QQC2.SpinBox {
         id: lyricTextVerticalOffsetSpinBox
-        Kirigami.FormData.label: i18n("Lyric Text vertical offset: ")
+        Kirigami.FormData.label: i18n("Lyric text vertical offset: ")
     }
 
     QQC2.SpinBox {
         id: mediaControllSpacingSpinBox
-        Kirigami.FormData.label: i18n("Media Controll Items spacing: ")
+        Kirigami.FormData.label: i18n("Media control items spacing: ")
     }
 
     QQC2.SpinBox {
         id: mediaControllItemSizeSpinBox
-        Kirigami.FormData.label: i18n("Media Controll Items size: ")
+        Kirigami.FormData.label: i18n("Media control items size: ")
     }
 
     QQC2.SpinBox {
         id: mediaControllItemVerticalOffsetSpinBox
-        Kirigami.FormData.label: i18n("Media Controll Items' vertical offset: ")
+        Kirigami.FormData.label: i18n("Media control items vertical offset: ")
     }
     
     QQLayouts.RowLayout {
-        Kirigami.FormData.label: i18n("Lyric Text Color: ")
+        Kirigami.FormData.label: i18n("Lyric text color: ")
 
         KQControls.ColorButton {
             id: lyricTextColorButton
@@ -74,7 +74,7 @@ Kirigami.FormLayout {
         QQC2.Button {
             id: boldButton
             QQC2.ToolTip {
-                text: i18n("Set text to bold")
+                text: i18n("Bold text")
             }
             icon.name: "format-text-bold"
             checkable: true
@@ -83,7 +83,7 @@ Kirigami.FormLayout {
         QQC2.Button {
             id: italicButton
             QQC2.ToolTip {
-                text: i18n("set text to Italic")
+                text: i18n("Italic text")
             }
             icon.name: "format-text-italic"
             checkable: true

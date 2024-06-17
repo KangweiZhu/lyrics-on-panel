@@ -11,13 +11,13 @@ ConfigModel {
     }
 
     ConfigCategory {
-        name: i18n("Change-Log & Tutorials")
+        name: i18n("Changelog & Tutorials")
         icon: "note"
         source: "notification.qml"
     }
 
     ConfigCategory {
-        name: i18n("Upload Lyric")
+        name: i18n("Upload Lyrics")
         icon: "note"
         source: "lyricUpload.qml"
     }

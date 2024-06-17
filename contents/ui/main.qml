@@ -220,7 +220,7 @@ PlasmoidItem {
             PlasmaComponents.TextField {
                 id: cookieTextField
                 visible: false
-                placeholderText: i18n("Enter your netease id")
+                placeholderText: i18n("Enter your Netease ID")
 
                 onAccepted: {
                     ypmLogined = true

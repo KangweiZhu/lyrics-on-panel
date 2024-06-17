@@ -7,7 +7,7 @@ Kirigami.FormLayout {
 
     Text {
         id: notificationText
-        text: "This widget is only for the Plasma6 environment and will not be available for Plasma5. If you are in Plasma5, please search for lyric-on-panel-plasma5. \n\nDue to the Plasma API change, I refactored much of the code and only kept the core lyric querying logic. Therefore, please expect some differences in the quality of these two versions of the widgets. \n\nI am currently busy looking for an internship, so my temporary goal is to make this widget usable. I apologize for not having much time to explore the new Plasma API. \nIf time allows, I will try to make the implementation of several logics more elegant and add more functionality by integrating C++ into this widget."
+        text: "This widget is only for Plasma 6 and is not available for Plasma 5. If you are in Plasma 5, please search for lyric-on-panel-plasma5. \n\nDue to the Plasma API change, I refactored most of the code and only kept the core lyric querying logic. Therefore, please expect some differences in the quality of these two versions of the widgets. \n\nI am currently busy looking for an internship, so my temporary goal is to make this widget usable. I apologize for not having much time to explore the new Plasma API. \nIf time allows, I will try to make the implementation of several logics more elegant and add more functionality by integrating C++ into this widget."
         color: "red"
     }
 
