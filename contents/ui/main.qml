@@ -104,13 +104,14 @@ Item {
                     if (mpris2Source && mpris2Source.data[mode] && mpris2Source.data[mode].PlaybackStatus === "Playing") {
                         pause();
                     } else {
-                    play();
+                        play();
+                    }
                 }
             }
         }
-    }
 
         Image {
+            id: forwardImage
             source: forwardIcon
             sourceSize.width: config_mediaControllItemSize
             sourceSize.height: config_mediaControllItemSize
@@ -118,15 +119,22 @@ Item {
             anchors.leftMargin: 2 * (config_mediaControllItemSize + config_mediaControllSpacing)
             anchors.verticalCenter: parent.verticalCenter
 
-        MouseArea {
-            anchors.fill: parent
-            onClicked: {
-                next();
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    next();
+                }
+            }
+
+            ColorOverlay {
+                anchors.fill: forwardImage
+                source: forwardImage
+                color: PlasmaCore.ColorScope.textColor
             }
         }
-    }
 
         Image {
+            id: likeImage
             source: liked ? likedIcon : likeIcon
             sourceSize.width: config_mediaControllItemSize
             sourceSize.height: config_mediaControllItemSize
@@ -134,14 +142,16 @@ Item {
             anchors.leftMargin: 3 * (config_mediaControllItemSize + config_mediaControllSpacing)
             anchors.verticalCenter: parent.verticalCenter
 
+            ColorOverlay {
+                anchors.fill: likeImage
+                source: likeImage
+                color: liked ? "red" : PlasmaCore.ColorScope.textColor
+            }
+
             MouseArea {
                 anchors.fill: parent
                 onClicked: {
-                    if (liked) {
-                        liked = false;
-                    } else {
-                        liked = true;
-                    }
+                    liked = !liked
                 }
             }
         }
@@ -154,6 +164,12 @@ Item {
             anchors.left: parent.left
             anchors.leftMargin: 4 * (config_mediaControllItemSize + config_mediaControllSpacing)
             anchors.verticalCenter: parent.verticalCenter
+
+            ColorOverlay {
+                anchors.fill: mediaPlayerIcon
+                source: mediaPlayerIcon
+                color: PlasmaCore.ColorScope.textColor
+            }
 
             MouseArea {
                 anchors.fill: parent
