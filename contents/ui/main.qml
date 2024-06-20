@@ -42,7 +42,7 @@ Item {
     Text {
         id: lyricText
         text: "Please open the configuration of this widget and read the developer's note!"
-        color: PlasmaCore.ColorScope.textColor
+        color: config_lyricTextColor
         font.pixelSize: config_lyricTextSize
         font.bold: config_lyricTextBold
         font.italic: config_lyricTextItalic
@@ -104,99 +104,99 @@ Item {
                     if (mpris2Source && mpris2Source.data[mode] && mpris2Source.data[mode].PlaybackStatus === "Playing") {
                         pause();
                     } else {
-                    play();
+                        play();
+                    }
+                }
+            }
+        }
+
+        Image {
+            id: forwardImage
+            source: forwardIcon
+            sourceSize.width: config_mediaControllItemSize
+            sourceSize.height: config_mediaControllItemSize
+            anchors.left: parent.left
+            anchors.leftMargin: 2 * (config_mediaControllItemSize + config_mediaControllSpacing)
+            anchors.verticalCenter: parent.verticalCenter
+
+            ColorOverlay {
+                anchors.fill: forwardImage
+                source: forwardImage
+                color: PlasmaCore.ColorScope.textColor
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    next();
+                }
+            }
+        }
+
+        Image {
+            id: likeImage
+            source: liked ? likedIcon : likeIcon
+            sourceSize.width: config_mediaControllItemSize
+            sourceSize.height: config_mediaControllItemSize
+            anchors.left: parent.left
+            anchors.leftMargin: 3 * (config_mediaControllItemSize + config_mediaControllSpacing)
+            anchors.verticalCenter: parent.verticalCenter
+
+            ColorOverlay {
+                anchors.fill: likeImage
+                source: likeImage
+                color: liked ? "red" : PlasmaCore.ColorScope.textColor
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    liked = !liked
+                }
+            }
+        }
+
+        Image {
+            id: mediaPlayerIcon
+            source: config_yesPlayMusicChecked ? cloudMusicIcon : spotifyIcon
+            sourceSize.width: config_mediaControllItemSize
+            sourceSize.height: config_mediaControllItemSize
+            anchors.left: parent.left
+            anchors.leftMargin: 4 * (config_mediaControllItemSize + config_mediaControllSpacing)
+            anchors.verticalCenter: parent.verticalCenter
+
+            ColorOverlay {
+                anchors.fill: mediaPlayerIcon
+                source: mediaPlayerIcon
+                color: PlasmaCore.ColorScope.textColor
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    var globalPos = mediaPlayerIcon.mapToGlobal(0, 0);
+                    if (config_yesPlayMusicChecked) {
+                        menuDialog.x = globalPos.x;
+                        menuDialog.y = globalPos.y * 3.5;
+                        if (!dialogShowed) { //苯办法了，后面看下怎么判定失去焦点
+                        menuDialog.show();
+                        dialogShowed = true;
+                    } else {
+                    dialogShowed = false;
+                    menuDialog.close();
+                    }
+
+                    }
                 }
             }
         }
     }
-
-    Image {
-        id: forwardImage
-        source: forwardIcon
-        sourceSize.width: config_mediaControllItemSize
-        sourceSize.height: config_mediaControllItemSize
-        anchors.left: parent.left
-        anchors.leftMargin: 2 * (config_mediaControllItemSize + config_mediaControllSpacing)
-        anchors.verticalCenter: parent.verticalCenter
-
-        ColorOverlay {
-            anchors.fill: forwardImage
-            source: forwardImage
-            color: PlasmaCore.ColorScope.textColor
-        }
-
-        MouseArea {
-            anchors.fill: parent
-            onClicked: {
-                next();
-            }
-        }
-    }
-
-    Image {
-        id: likeImage
-        source: liked ? likedIcon : likeIcon
-        sourceSize.width: config_mediaControllItemSize
-        sourceSize.height: config_mediaControllItemSize
-        anchors.left: parent.left
-        anchors.leftMargin: 3 * (config_mediaControllItemSize + config_mediaControllSpacing)
-        anchors.verticalCenter: parent.verticalCenter
-
-        ColorOverlay {
-            anchors.fill: likeImage
-            source: likeImage
-            color: liked ? "red" : PlasmaCore.ColorScope.textColor
-        }
-
-        MouseArea {
-            anchors.fill: parent
-            onClicked: {
-                liked = !liked
-            }
-        }
-    }
-
-    Image {
-        id: mediaPlayerIcon
-        source: config_yesPlayMusicChecked ? cloudMusicIcon : spotifyIcon
-        sourceSize.width: config_mediaControllItemSize
-        sourceSize.height: config_mediaControllItemSize
-        anchors.left: parent.left
-        anchors.leftMargin: 4 * (config_mediaControllItemSize + config_mediaControllSpacing)
-        anchors.verticalCenter: parent.verticalCenter
-        
-        ColorOverlay {
-            anchors.fill: mediaPlayerIcon
-            source: mediaPlayerIcon
-            color: PlasmaCore.ColorScope.textColor
-        }
-        
-        MouseArea {
-            anchors.fill: parent
-            onClicked: {
-                var globalPos = mediaPlayerIcon.mapToGlobal(0, 0);
-                if (config_yesPlayMusicChecked) {
-                    menuDialog.x = globalPos.x;
-                    menuDialog.y = globalPos.y * 3.5;
-                    if (!dialogShowed) { //苯办法了，后面看下怎么判定失去焦点
-                    menuDialog.show();
-                    dialogShowed = true;
-                } else {
-                dialogShowed = false;
-                menuDialog.close();
-                }
-
-                }
-            }
-        }
-    }
-}
 
     // variables that are neccessary for ypm like/dislike and others new features in the future
     property bool dialogShowed: false;
     property bool ypmLogined: false;
     property string ypmUserName: "";
-    property string ypmCookie: "";//qml不让设。
+    property string ypmCookie: "";
     property string csrf_token: ""
     property string neteaseID: ""
     property bool currentMusicLiked: false
@@ -206,9 +206,7 @@ Item {
         id: menuDialog
         visible: false
 
-        // onActiveFocusChanged: {
-        //     console.log("entered");
-        // } //用mouseArea做试试
+        //Todo: Use MouseArea
 
         width: column.implicitWidth
         height: column.implicitHeight
@@ -246,7 +244,7 @@ Item {
             PlasmaComponents.MenuItem {
                 id: ypmCreateDays
                 visible: true // todo: 可以用ypmLogined做判定，但是有bug。会导致登录后元素显示不全。先这样子吧。
-                                //edit: 估计是menuitem默认字体高宽的的问题。有空再搞。
+                              //edit: 估计是menuitem默认字体高宽的的问题。有空再搞。
                 text: ""
             }
 
@@ -276,7 +274,7 @@ Item {
                 onTriggered: {
                     ypmLogined = false;
                     neteaseID = ""
-                    ypmSongsListened.text = ""; //同理，原本是可以三元做的
+                    ypmSongsListened.text = ""; //todo: 同理，原本是可以三元做的
                     ypmFollowed.text = "";
                     ypmFollow.text = "";
                     ypmCreateDays.text = "";

@@ -9,14 +9,18 @@ Kirigami.FormLayout {
     id: generalPage
     signal configurationChanged
 
-    property alias cfg_yesPlayMusicChecked: yesPlayMusicPropriataryRadioButton.checked 
-    property alias cfg_spotifyChecked: spotifyPropriataryRadioButton.checked   
+    property alias cfg_yesPlayMusicChecked: yesPlayMusicPropriataryRadioButton.checked
+    property alias cfg_spotifyChecked: spotifyPropriataryRadioButton.checked
     property alias cfg_compatibleModeChecked: compatibleModeRadioButton.checked
-    property alias cfg_lyricTextSize: lyricTextSizeSpinBox.value 
+    property alias cfg_lyricTextSize: lyricTextSizeSpinBox.value
+    property alias cfg_lyricTextColor: lyricTextColorButton.color
+    property alias cfg_lyricTextBold: boldButton.checked
+    property alias cfg_lyricTextItalic: italicButton.checked
     property alias cfg_lyricTextVerticalOffset: lyricTextVerticalOffsetSpinBox.value
     property alias cfg_mediaControllSpacing: mediaControllSpacingSpinBox.value
     property alias cfg_mediaControllItemSize: mediaControllItemSizeSpinBox.value
     property alias cfg_mediaControllItemVerticalOffset: mediaControllItemVerticalOffsetSpinBox.value
+
 
     QQC2.RadioButton {
         id: yesPlayMusicPropriataryRadioButton
@@ -58,12 +62,37 @@ Kirigami.FormLayout {
         id: mediaControllItemVerticalOffsetSpinBox
         Kirigami.FormData.label: i18n("Media Controll Items' vertical offset: ")
     }
-    
-    
+
+    QQLayouts.RowLayout {
+        Kirigami.FormData.label: i18n("Lyric Text Color: ")
+
+        KQControls.ColorButton {
+            id: lyricTextColorButton
+        }
+
+        QQC2.Button {
+            id: boldButton
+            QQC2.ToolTip {
+                text: i18n("Set text to bold")
+            }
+            icon.name: "format-text-bold"
+            checkable: true
+        }
+
+        QQC2.Button {
+            id: italicButton
+            QQC2.ToolTip {
+                text: i18n("set text to Italic")
+            }
+            icon.name: "format-text-italic"
+            checkable: true
+        }
+    }
+}
     // trackName	true	string	Title of the track
     // artistName	true	string	Track's artist name
     // albumName	true	string	Track's album name
     // duration	true	number	Track's duration
     // plainLyrics	true	string	Plain lyrics for the track
     // syncedLyrics	true	string	Synchronized lyrics for the track
-}   
+  
