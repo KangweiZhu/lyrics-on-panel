@@ -53,3 +53,11 @@ This differs from app-specific modes (e.g., Spotify mode or YesPlayMusic mode), 
 
 
 
+## v.1.2 Forked by Scidawn
+
+### Key Points
+
+1. changed default configuration
+2. realigned the buttons into compact mode
+3. added automatic line break for long lyrics
+4. Added a configuration option to change the Threshold for automatic line break

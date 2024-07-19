@@ -1,19 +1,12 @@
-<h1 align="center">Lyrics-on-Panel</h1>
+# Plasma6-Lyric-on-panel
 
-<p align="center">
-  <a href="https://drive.google.com/file/d/1wo_2CpBg5cgbhNJqyb9LIaSVA5LmSR2S/view?usp=drive_link" target="_blank">
-  	点击查看DEMO视频 (Watch demo video)
-  </a>
-</p>
-
-<p align="center">
-  <img src="img/image-panel-onlythiswidget.png" alt="Plasma Lyric Panel Demo" width="500"/>
-</p>
-<p align="center"><b><code>在屏幕的任何地方显示正在播放音乐的歌词  
-</code></b></p>
-<p align="center"><b><code>Display lyrics of the currently playing music anywhere on the screen</code></b></p>
-
-
+> This widget is a fork of the great widget [Lyrics-on-Panel](https://github.com/KangweiZhu/lyrics-on-panel) by KangweiZhu. The original widget requires a lot of space on the panel.
+> So, I decided to make a new widget that automatically splits the lyrics into multiple lines and displays them on the panel.
+> Furthermore, I rearranged the layout of the widget to make it more compact.
+> Finally, I aim to translate the Chinese comments into English, and make the widget more user-friendly.
+> Hope you enjoy it!
+> Last but not least, I would like to thank KangweiZhu for his great work!
+> Long live the open-source community!
 
 ### 目前版本
 
@@ -123,7 +116,6 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
 
    ​    
 
-   
 
 2. 使用以下命令测试并安装
 
@@ -139,6 +131,7 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
  
 ---
 ### 展示（Showcase）  
+> "Most likely will be able to display the lyric which Spotify does not show."
 
 #### KDE Plasma6（配合 [**Panel Coloizer**](https://github.com/luisbocanegra/plasma-panel-colorizer)）
 > Under KDE Plasma 6 (With [**Panel Coloizer**](https://github.com/luisbocanegra/plasma-panel-colorizer)).
