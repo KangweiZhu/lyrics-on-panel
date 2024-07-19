@@ -52,7 +52,7 @@
             <default>23330</default>
         </entry>
         <entry name="lineBreakThreshold" type="Int">
-            <default>50</default>
+            <default>30</default>
         </entry>
     </group>
 
