@@ -49,7 +49,7 @@ PlasmoidItem {
 
     Text {
         id: lyricText
-        text: ""
+        text: "Ready"
         color: config_lyricTextColor
         font.pixelSize: config_lyricTextSize
         font.bold: config_lyricTextBold
@@ -467,12 +467,31 @@ PlasmoidItem {
     // exception handling: no lyric => only display title - artists
     property string lrc_not_exists: {
         if (currentMediaTitle && currentMediaArtists) {
-            return currentMediaTitle + " - " + currentMediaArtists;
+            return addLineBreak(currentMediaTitle + " - " + currentMediaArtists);
         } else if (currentMediaTitle && !currentMediaArtists) {
-            return currentMediaTitle;
+            return addLineBreak(currentMediaTitle);
         } else {
             return "This song doesn't contain any lyric/title/artist.";
         }
+    }
+
+    function addLineBreak(lyric) {
+        if (!lyric || lyric === "") {
+            return "";
+        }
+
+        if (lyric.length < 40) {
+            return lyric;
+        }
+
+        var line_break = Math.floor(lyric.length / 2);
+        for (line_break; line_break < lyric.length; line_break++) {
+            if ([" ", ",", ".", "!", "?", ":"].includes(lyric[line_break])) {
+                return lyric.substring(0, line_break) + "\n" + lyric.substring(line_break + 1);
+            }
+        }
+
+        return lyric;
     }
 
     // fetch the current media id from yesplaymusic(ypm);
@@ -585,7 +604,7 @@ PlasmoidItem {
                 lyricsWTimes.append({time: timestamp, lyric: lyricPerRow});
             }
         }
-        lyricDisplayTimer.start()
+        lyricDisplayTimer.start();
     }
 
     /**
@@ -704,14 +723,63 @@ PlasmoidItem {
         return false;
     }
 
-    function ypmHandler() {
-        if (currentMediaArtists === "" && currentMediaTitle === "") {
-                lyricText.text = " ";
-                lyricsWTimes.clear();
-        } else {
-            if (!isYPMLyricFound) {
-                reset();
-                fetchMediaIdYPM();  
+    function reset() {
+        //console.log("entered")
+        compatibleModeTimer.stop();
+        yesPlayMusicTimer.stop();
+        ypmUserInfoTimer.stop();
+        previousMediaTitle = "";
+        previousMediaArtists = "";
+        lyricsWTimes.clear();
+        prevNonEmptyLyric = "";
+        previousLrcId = "";
+        queryFailed = false;
+        lyricText.text = " ";
+        isCompatibleLRCFound = false;
+        isYPMLyricFound = false;
+    }
+
+    function getUserDetail() {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", ypm_base_url + "/api/user/detail?uid=" + neteaseID);
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                if (xhr.responseText && xhr.responseText !== "[]") {
+                    var response = JSON.parse(xhr.responseText);
+                    ypmUserName = "你好， " + response.profile.nickname;
+                    ypmCreateDays.text = "您已加入云村: " + response.createDays + "天";
+                    ypmSongsListened.text = "总计听歌:" + response.listenSongs + "首";
+                    ypmFollowed.text = "粉丝: " + response.profile.followeds;
+                    ypmFollow.text =  "关注: " + response.profile.follows;
+                }
+            }
+        };
+        xhr.send();
+    }
+
+    Timer {
+        id: lyricDisplayTimer
+        interval: 1
+        running: false
+        repeat: true
+        onTriggered: { 
+            if (currentMediaTitle === "Advertisement") { // Aim to solve Spotify non-premium bug report
+                lyricText.text = currentMediaTitle;
+            } else {
+                for (let i = 0; i < lyricsWTimes.count; i++) {
+                    if (lyricsWTimes.get(i).time >= mprisCurrentPlayingSongTimeMS) {
+                        currentLyricIndex = i > 0 ? i - 1 : 0;
+                        var currentLWT = lyricsWTimes.get(currentLyricIndex);
+                        var currentLyric = currentLWT.lyric;
+                        if (!currentLWT || !currentLyric || currentLyric === "" && prevNonEmptyLyric != "") {
+                            lyricText.text = prevNonEmptyLyric;
+                        } else {
+                            lyricText.text = addLineBreak(currentLyric);
+                            prevNonEmptyLyric = currentLyric;
+                        }
+                        break;
+                    }
+                }
             }
         }
     }

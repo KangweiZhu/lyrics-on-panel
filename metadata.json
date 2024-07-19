@@ -4,14 +4,18 @@
             {
                 "Email": "anicaazhu@gmail.com",
                 "Name": "Anicaa Zhu"
+            },
+            {
+                "Email": "sandro.lobbene@rwth-aachen.de",
+                "Name": "Scidawn"
             }
         ],
         "Category": "Multimedia",
         "Description": "A widget that can display the current playing music's synchronized lyrics line by line, on any where.",
         "Icon": "preferences-media-playback-amarok",
-        "Id": "lyrics-on-panel-plasma6",
+        "Id": "lyrics-on-panel-plasma6-fork",
         "License": "GPLv3",
-        "Name": "lyrics-on-panel-plasma6",
+        "Name": "lyrics-on-panel-plasma6-fork",
         "KPackageStructure": "Plasma/Applet",
         "Version": "1.4",
         "Website": "https://github.com/KangweiZhu/lyrics-on-panel/tree/plasma6"
