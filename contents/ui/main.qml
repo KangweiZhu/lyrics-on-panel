@@ -55,7 +55,7 @@ PlasmoidItem {
         font.bold: config_lyricTextBold
         font.italic: config_lyricTextItalic
         anchors.right: parent.right
-        anchors.rightMargin: 6 * (config_mediaControllItemSize + config_mediaControllSpacing)
+        anchors.rightMargin: 6 * config_mediaControllItemSize + 5 * config_mediaControllSpacing
         anchors.verticalCenter: parent.verticalCenter
         anchors.verticalCenterOffset: config_lyricTextVerticalOffset
     }
@@ -65,8 +65,8 @@ PlasmoidItem {
         anchors.right: parent.right
         anchors.rightMargin: 1 
         anchors.verticalCenter: parent.verticalCenter
-        width: 5 * config_mediaControllItemSize + 4 * config_mediaControllSpacing
-        height: config_mediaControllItemSize
+        width: 3 * config_mediaControllItemSize + 2 * config_mediaControllSpacing
+        height: (config_mediaControllItemSize + config_mediaControllSpacing) * 2
         anchors.verticalCenterOffset: config_mediaControllItemVerticalOffset
 
         Image {
@@ -74,7 +74,8 @@ PlasmoidItem {
             sourceSize.width: config_mediaControllItemSize 
             sourceSize.height: config_mediaControllItemSize
             anchors.left: parent.left
-            anchors.verticalCenter: parent.verticalCenter
+            anchors.top: parent.top
+            //anchors.verticalCenter: parent.verticalCenter
 
             MouseArea {
                 anchors.fill: parent
@@ -89,8 +90,8 @@ PlasmoidItem {
             sourceSize.width: config_mediaControllItemSize
             sourceSize.height: config_mediaControllItemSize
             anchors.left: parent.left
-            anchors.leftMargin: config_mediaControllItemSize + config_mediaControllSpacing
-            anchors.verticalCenter: parent.verticalCenter
+            anchors.bottom: parent.bottom
+            //anchors.verticalCenter: parent.verticalCenter
 
             MouseArea {
                 anchors.fill: parent
@@ -109,8 +110,9 @@ PlasmoidItem {
             sourceSize.width: config_mediaControllItemSize
             sourceSize.height: config_mediaControllItemSize
             anchors.left: parent.left
-            anchors.leftMargin: 2 * (config_mediaControllItemSize + config_mediaControllSpacing)
-            anchors.verticalCenter: parent.verticalCenter
+            anchors.leftMargin: 1 * (config_mediaControllItemSize + config_mediaControllSpacing)
+            anchors.top: parent.top
+            //anchors.verticalCenter: parent.verticalCenter
 
             MouseArea {
                 anchors.fill: parent
@@ -125,8 +127,9 @@ PlasmoidItem {
             sourceSize.width: config_mediaControllItemSize
             sourceSize.height: config_mediaControllItemSize
             anchors.left: parent.left
-            anchors.leftMargin: 3 * (config_mediaControllItemSize + config_mediaControllSpacing)
-            anchors.verticalCenter: parent.verticalCenter
+            anchors.bottom: parent.bottom
+            anchors.leftMargin: 1 * (config_mediaControllItemSize + config_mediaControllSpacing)
+            //anchors.verticalCenter: parent.verticalCenter
 
             MouseArea {
                 anchors.fill: parent
@@ -146,7 +149,7 @@ PlasmoidItem {
             sourceSize.width: config_mediaControllItemSize
             sourceSize.height: config_mediaControllItemSize
             anchors.left: parent.left
-            anchors.leftMargin: 4 * (config_mediaControllItemSize + config_mediaControllSpacing)
+            anchors.leftMargin: 2 * (config_mediaControllItemSize + config_mediaControllSpacing)
             anchors.verticalCenter: parent.verticalCenter
 
             MouseArea {
@@ -162,7 +165,7 @@ PlasmoidItem {
                             dialogShowed = false;
                             menuDialog.close();
                         }
-                    } 
+                    }
                 }
             }
         }
@@ -773,7 +776,7 @@ PlasmoidItem {
                         var currentLWT = lyricsWTimes.get(currentLyricIndex);
                         var currentLyric = currentLWT.lyric;
                         if (!currentLWT || !currentLyric || currentLyric === "" && prevNonEmptyLyric != "") {
-                            lyricText.text = prevNonEmptyLyric;
+                            lyricText.text = addLineBreak(prevNonEmptyLyric);
                         } else {
                             lyricText.text = addLineBreak(currentLyric);
                             prevNonEmptyLyric = currentLyric;
