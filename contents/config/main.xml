@@ -16,7 +16,7 @@
             <default>true</default>
         </entry>
         <entry name="lyricTextSize" type="Int">
-            <default>13</default>
+            <default>10</default>
         </entry>
         <entry name="lyricTextColor" type="Color">
             <default>PlasmaCore.Theme.textColor</default>
@@ -28,19 +28,19 @@
             <default>false</default>
         </entry>
         <entry name="mediaControllSpacing" type="Int"> 
-            <default>10</default>
+            <default>1</default>
         </entry>
         <entry name="mediaControllItemSize" type="Int">
-            <default>15</default>
+            <default>9</default>
         </entry>
         <entry name="mediaControllItemVerticalOffset" type="Int">
             <default>1</default>
         </entry>
         <entry name="lyricTextVerticalOffset" type="Int">
-            <default>0</default>
+            <default>2</default>
         </entry>
         <entry name="whiteMediaControlIconsChecked" type="Bool">
-            <default>false</default>
+            <default>true</default>
         </entry>
         <entry name="preferedWidgetWidth" type="String">
             <default>550</default>
@@ -51,6 +51,8 @@
         <entry name="lxMusicPort" type="Int">
             <default>23330</default>
         </entry>
+        <entry name="lineBreakThreshold" type="Int">
+            <default>50</default>
     </group>
 
     <!-- <group name="Notification">

@@ -198,6 +198,7 @@ PlasmoidItem {
     property int config_whiteMediaControlIconsChecked: Plasmoid.configuration.whiteMediaControlIconsChecked;
     property int config_preferedWidgetWidth: Plasmoid.configuration.preferedWidgetWidth;
     property bool config_hideItemWhenNoControlChecked: Plasmoid.configuration.hideItemWhenNoControlChecked;
+    property int config_lineBreakThreshold: Plasmoid.configuration.lineBreakThreshold;
 
     property int config_lxMusicPort: Plasmoid.configuration.lxMusicPort;
 
@@ -480,7 +481,7 @@ PlasmoidItem {
             return "";
         }
 
-        if (lyric.length < 40) {
+        if (lyric.length < config_lineBreakThreshold) {
             return lyric;
         }
 
