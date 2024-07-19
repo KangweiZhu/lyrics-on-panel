@@ -53,6 +53,7 @@
         </entry>
         <entry name="lineBreakThreshold" type="Int">
             <default>50</default>
+        </entry>
     </group>
 
     <!-- <group name="Notification">
