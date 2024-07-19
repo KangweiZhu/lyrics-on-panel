@@ -13,12 +13,13 @@
         "Category": "Multimedia",
         "Description": "A widget that can display the current playing music's synchronized lyrics line by line, on any where.",
         "Icon": "preferences-media-playback-amarok",
-        "Id": "lyrics-on-panel-plasma6-fork",
+        "Id": "com.github.scidawn.lyrics",
         "License": "GPLv3",
         "Name": "lyrics-on-panel-plasma6-fork",
         "KPackageStructure": "Plasma/Applet",
         "Version": "1.1",
         "Website": "https://github.com/Scidawn/"
     },
+    "KPackageStructure": "Plasma/Applet",
     "X-Plasma-API-Minimum-Version": "6.0"
 }
