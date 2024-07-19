@@ -17,8 +17,8 @@
         "License": "GPLv3",
         "Name": "lyrics-on-panel-plasma6-fork",
         "KPackageStructure": "Plasma/Applet",
-        "Version": "1.4",
-        "Website": "https://github.com/KangweiZhu/lyrics-on-panel/tree/plasma6"
+        "Version": "1.1",
+        "Website": "https://github.com/Scidawn/"
     },
     "X-Plasma-API-Minimum-Version": "6.0"
 }
