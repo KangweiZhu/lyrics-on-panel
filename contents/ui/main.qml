@@ -39,6 +39,8 @@ PlasmoidItem {
     Layout.preferredWidth: config_preferedWidgetWidth;
     Layout.preferredHeight: lyricText.contentHeight;
     
+    Plasmoid.status: mpris2Model.currentPlayer?.canControl || !config_hideItemWhenNoControlChecked ? PlasmaCore.Types.ActiveStatus : PlasmaCore.Types.HiddenStatus;
+
     width: 0;
     height: lyricText.contentHeight;
 
@@ -427,6 +429,7 @@ PlasmoidItem {
     property int config_lyricTextVerticalOffset: Plasmoid.configuration.lyricTextVerticalOffset
     property int config_whiteMediaControlIconsChecked: Plasmoid.configuration.whiteMediaControlIconsChecked;
     property int config_preferedWidgetWidth: Plasmoid.configuration.preferedWidgetWidth;
+    property bool config_hideItemWhenNoControlChecked: Plasmoid.configuration.hideItemWhenNoControlChecked;
 
     //Other Media Player's mpris2 data
     property int mprisCurrentPlayingSongTimeMS: {
