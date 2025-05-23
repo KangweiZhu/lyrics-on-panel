@@ -42,6 +42,12 @@ PlasmoidItem {
     width: 0;
     height: lyricText.contentHeight;
 
+    /**
+        Set the background of this widget to be 'configurable' transparent or non transparent.
+        https://develop.kde.org/docs/plasma/widget/properties/#x-plasma-api-x-plasma-mainscript
+    */    
+    Plasmoid.backgroundHints: PlasmaCore.Types.NoBackground | PlasmaCore.Types.ConfigurableBackground
+
     Text {
         id: lyricText
         text: ""
@@ -264,7 +270,7 @@ PlasmoidItem {
                 onTriggered: {
                     ypmLogined = false;
                     neteaseID = ""
-                    ypmSongsListened.text = ""; //同理，原本是可以三元做的
+                    ypmSongsListened.text = ""; 
                     ypmFollowed.text = "";
                     ypmFollow.text = "";
                     ypmCreateDays.text = "";
@@ -303,9 +309,9 @@ PlasmoidItem {
         running: true
         repeat: true
         onTriggered: {
-            // console.log(JSON.stringify(multiplexerModel))
-            // console.log(multiplexerModel);
-            // console.log(multiplexerModel.toString());
+            console.log(JSON.stringify(mpris2Model))
+            console.log(mpris2Model);
+            console.log(mpris2Model.toString());
             //log();
             // 如果 mpris 里面， 当前播放器和之前的播放器不一样，就重置。
             if (!currentMediaTitle && !currentMediaArtists) {
