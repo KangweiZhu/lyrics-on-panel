@@ -9,6 +9,15 @@ import org.kde.plasma.components 3.0 as PlasmaComponents
 import org.kde.plasma.plasma5support as Plasma5Support
 import org.kde.plasma.private.mpris as Mpris
 
+
+/**
+Below are some documents that I found useful when writing this widget.
+
+https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html
+
+https://app.readthedocs.org/projects/mpris2/downloads/pdf/latest/
+*/
+
 PlasmoidItem {
     id: root
 
@@ -16,39 +25,27 @@ PlasmoidItem {
         id: mpris2Model
     }
 
-    // Todo: [v1.1.4]
+    // Seems obsolete by KDE Plasma 6.
     Mpris.MultiplexerModel {
         id: multiplexerModel
     }
-
-    property string currentMediaTitle: mpris2Model.currentPlayer?.track ?? ""
-
-    property string currentMediaArtists: mpris2Model.currentPlayer?.artist ?? ""
-
-    property string currentMediaAlbum: mpris2Model.currentPlayer?.album ?? ""
-
-    property int playbackStatus: mpris2Model.currentPlayer?.playbackStatus ?? 0
-
-    property bool isPlaying: root.playbackStatus === Mpris.PlaybackStatus.Playing
-
-    property string nameOfCurrentPlayer: mpris2Model.currentPlayer?.objectName ?? ""
-
-    property int position: mpris2Model.currentPlayer?.position ?? 0
-
-    preferredRepresentation: fullRepresentation // Otherwise it will only display your icon declared in the metadata.json file
-    Layout.preferredWidth: config_preferedWidgetWidth;
-    Layout.preferredHeight: lyricText.contentHeight;
     
-    Plasmoid.status: mpris2Model.currentPlayer?.canControl || !config_hideItemWhenNoControlChecked ? PlasmaCore.Types.ActiveStatus : PlasmaCore.Types.HiddenStatus;
-
     width: 0;
     height: lyricText.contentHeight;
 
+    // Need to set it full representation. Otherwise it will only display the applet icon declared in the metadata.json file on the panel.
+    preferredRepresentation: fullRepresentation 
+    Layout.preferredWidth: config_preferedWidgetWidth;
+    Layout.preferredHeight: lyricText.contentHeight;
+    
     /**
         Set the background of this widget to be 'configurable' transparent or non transparent.
         https://develop.kde.org/docs/plasma/widget/properties/#x-plasma-api-x-plasma-mainscript
     */    
     Plasmoid.backgroundHints: PlasmaCore.Types.NoBackground | PlasmaCore.Types.ConfigurableBackground
+
+    // Should ask uiYzzi if problem occurs.
+    Plasmoid.status: mpris2Model.currentPlayer?.canControl || !config_hideItemWhenNoControlChecked ? PlasmaCore.Types.ActiveStatus : PlasmaCore.Types.HiddenStatus;
 
     Text {
         id: lyricText
@@ -66,7 +63,7 @@ PlasmoidItem {
     Item {
         id: iconsContainer
         anchors.right: parent.right
-        anchors.rightMargin: 1 //10
+        anchors.rightMargin: 1 
         anchors.verticalCenter: parent.verticalCenter
         width: 5 * config_mediaControllItemSize + 4 * config_mediaControllSpacing
         height: config_mediaControllItemSize
@@ -74,7 +71,7 @@ PlasmoidItem {
 
         Image {
             source: backwardIcon
-            sourceSize.width: config_mediaControllItemSize //不能用width, 锯齿太严重，直接控制图片渲染svg的大小
+            sourceSize.width: config_mediaControllItemSize 
             sourceSize.height: config_mediaControllItemSize
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
@@ -155,25 +152,10 @@ PlasmoidItem {
             MouseArea {
                 anchors.fill: parent
                 onClicked: {
-                    // switchDisplay = !switchDisplay;
-                    // if (switchDisplay) {
-                    //     lyricsWTimes.clear();
-                    //     lyricText.text = currentMediaTitle + " - " + currentMediaArtists;
-                    // } else {
-                    //     if (config_yesPlayMusicChecked) {
-                    //         isYPMLyricFound = false;
-                    //     } else {
-                    //         isCompatibleLRCFound = false;
-                    //     }
-                    // }
-                    //var globalPos = mediaPlayerIcon.mapToGlobal(0, 0);
-                    
-                    // Temporarily remove in v1.1.3
-                    // [v1.1.3] Click spotify icon => swtich display mode. 
                     if (config_yesPlayMusicChecked) {
                         menuDialog.x = globalPos.x;
                         menuDialog.y = globalPos.y * 3.5;
-                        if (!dialogShowed) { //苯办法了，后面看下怎么判定失去焦点
+                        if (!dialogShowed) { 
                             menuDialog.show(); 
                             dialogShowed = true;
                         } else {
@@ -186,124 +168,58 @@ PlasmoidItem {
         }
     }
 
-    // [v1.1.3] Click spotify icon => swtich display mode. 
-    property bool switchDisplay: false;
+    // UI-Resources related configurations
+    property string backwardIcon: config_whiteMediaControlIconsChecked ? "../assets/media-backward-white.svg" : "../assets/media-backward.svg"
+    property string pauseIcon: config_whiteMediaControlIconsChecked ? "../assets/media-pause-white.svg" : "../assets/media-pause.svg"
+    property string forwardIcon: config_whiteMediaControlIconsChecked ? "../assets/media-forward-white.svg" : "../assets/media-forward.svg"
+    property string likeIcon: config_whiteMediaControlIconsChecked ? "../assets/media-like-white.svg" : "../assets/media-like.svg"
+    property string likedIcon: "../assets/media-liked.svg"
+    property string cloudMusicIcon: config_whiteMediaControlIconsChecked ? "../assets/netease-cloud-music-white.svg" : "../assets/netease-cloud-music.svg"
+    property string spotifyIcon: config_whiteMediaControlIconsChecked ? "../assets/spotify-white.svg" : "../assets/spotify.svg"
+    property string playIcon: config_whiteMediaControlIconsChecked ? "../assets/media-play-white.svg" : "../assets/media-play.svg"
+    property bool liked: false;
 
-    // variables that are neccessary for ypm like/dislike and others new features in the future
-    property bool dialogShowed: false;
-    property bool ypmLogined: false;
-    property string ypmUserName: "";
-    property string ypmCookie: "";//qml不让设。
-    property string csrf_token: ""
-    property string neteaseID: ""
-    property bool currentMusicLiked: false
+    // Applet UI behavior configuration
+    property bool config_yesPlayMusicChecked: Plasmoid.configuration.yesPlayMusicChecked;
+    property bool config_spotifyChecked: Plasmoid.configuration.spotifyChecked;
+    property bool config_compatibleModeChecked: Plasmoid.configuration.compatibleModeChecked;
+    property int config_lyricTextSize: Plasmoid.configuration.lyricTextSize;
+    property string config_lyricTextColor: Plasmoid.configuration.lyricTextColor;
+    property bool config_lyricTextBold: Plasmoid.configuration.lyricTextBold;
+    property bool config_lyricTextItalic: Plasmoid.configuration.lyricTextItalic;
+    property int config_mediaControllSpacing: Plasmoid.configuration.mediaControllSpacing
+    property int config_mediaControllItemSize: Plasmoid.configuration.mediaControllItemSize
+    property int config_mediaControllItemVerticalOffset: Plasmoid.configuration.mediaControllItemVerticalOffset;
+    property int config_lyricTextVerticalOffset: Plasmoid.configuration.lyricTextVerticalOffset
+    property int config_whiteMediaControlIconsChecked: Plasmoid.configuration.whiteMediaControlIconsChecked;
+    property int config_preferedWidgetWidth: Plasmoid.configuration.preferedWidgetWidth;
+    property bool config_hideItemWhenNoControlChecked: Plasmoid.configuration.hideItemWhenNoControlChecked;
 
-    PlasmaCore.Dialog {
-        id: menuDialog
-        visible: false
 
-        // onActiveFocusChanged: {
-        //     console.log("entered");
-        // } //用mouseArea做试试
+    /**
+    ===============================================================================================================================================================================
+    Above are the UI related code. 
 
-        width: column.implicitWidth
-        height: column.implicitHeight
+    I am planning to disassemble them. 
 
-        Column {
-            spacing: 5
+    Below are backend logic related code.
+    ===============================================================================================================================================================================
+    */
 
-            PlasmaComponents.MenuItem {
-                id: userInfoMenuItem
-                visible: true
-                text: ypmLogined ? ypmUserName : i18n("登录")
-
-                onTriggered: {
-                    if (!ypmLogined) {
-                       userInfoMenuItem.visible = false;
-                       cookieTextField.visible = true;
-                    }
-                }
-            }
-
-            PlasmaComponents.TextField {
-                id: cookieTextField
-                visible: false
-                placeholderText: i18n("Enter your Netease ID")
-
-                onAccepted: {
-                    ypmLogined = true
-                    userInfoMenuItem.visible = true;
-                    cookieTextField.visible = false;
-                    neteaseID = cookieTextField.text
-                    //need to add a cookie validation in the future 
-                }
-            }
-
-            PlasmaComponents.MenuItem {
-                id: ypmCreateDays
-                visible: true // todo: 可以用ypmLogined做判定，但是有bug。会导致登录后元素显示不全。先这样子吧。
-                                //edit: 估计是menuitem默认字体高宽的的问题。有空再搞。
-                text: ""
-            }
-
-            PlasmaComponents.MenuItem {
-                id: ypmSongsListened
-                visible: true
-                text: ""
-            }
-
-            PlasmaComponents.MenuItem {
-                id: ypmFollowed
-                visible: true
-                text: ""
-            }
-
-            PlasmaComponents.MenuItem {
-                id: ypmFollow
-                visible: true
-                text: "需要登录"
-            }
-            
-            PlasmaComponents.MenuItem {
-                id: logout
-                visible: true
-                text: "登出" // i18n
-
-                onTriggered: {
-                    ypmLogined = false;
-                    neteaseID = ""
-                    ypmSongsListened.text = ""; 
-                    ypmFollowed.text = "";
-                    ypmFollow.text = "";
-                    ypmCreateDays.text = "";
-                }
-            }
-        }
-    }
-
-    Timer {
-        id: ypmUserInfoTimer
-        interval: 1000
-        running: false
-        repeat: true
-        onTriggered: {
-            if (ypmLogined) {
-                getUserDetail();
-            }
-        }
-    }
-
+    /**
+        Some music player doesn't actively pushing the position to mpris2 datasource. 
+        So have to send mpris2 datasource a signal to let'em pull the current position of the song from the player.
+    */
     Timer {
         id: positionTimer
         interval: 1
         running: true
         repeat: true
         onTriggered: {
-            // Some music player doesnt not actively sending the position to our datasource. 
-            // So we have to actively retrieve the correct position.
             mpris2Model.currentPlayer.updatePosition();
         }
     }
+
 
     Timer {
         id: schedulerTimer
@@ -311,34 +227,27 @@ PlasmoidItem {
         running: true
         repeat: true
         onTriggered: {
-            console.log(JSON.stringify(mpris2Model))
-            console.log(mpris2Model);
-            console.log(mpris2Model.toString());
-            //log();
-            // 如果 mpris 里面， 当前播放器和之前的播放器不一样，就重置。
-            if (!currentMediaTitle && !currentMediaArtists) {
-                mpris2Model.currentPlayer.Pause();
-            }
-            if (nameOfPreviousPlayer != nameOfCurrentPlayer) {
-                nameOfPreviousPlayer = nameOfCurrentPlayer;
+            /**
+                Use translator if you don't understand the comment... Too lazy to rewrite it in English.
+
+                如果 
+                    1. mpris 里面，当前播放音乐的title和artists都为空, 则尝试重置。
+                    2. mpris 里面，当前播放器和之前的播放器不一样，就重置。
+                    3. 设置 里面， 当前播放器和之前设置的播放器不一样(即更新了当前追踪的播放器),就重置。
+                    4. 前后歌名，前后歌手不一样，重置。
+                
+                重置后，重新判断当前预期的播放器是哪个。并且开启对应的timer（线程）
+            */ 
+            if (
+                !currentMediaTitle && !currentMediaArtists ||
+                nameOfPreviousPlayer != nameOfCurrentPlayer ||
+                prevExpectedPlayerName != currExpectedPlayerName ||
+                currentMediaTitle != previousMediaTitle || 
+                currentMediaArtists != previousMediaArtists
+            ){
                 reset();
-            }
-            // 如果 设置 里面， 当前播放器和之前设置的播放器不一样，就重置。
-            if (prevExpectedPlayerName != currExpectedPlayerName) {
-                prevExpectedPlayerName = currExpectedPlayerName;
-                mpris2Model.currentPlayer.Pause();
-                reset();
-            }
-            // 前后歌名不一样， 重置。
-            if (currentMediaTitle != previousMediaTitle || currentMediaArtists != previousMediaArtists) {
-                //console.log("Update current media artist and title");
-                reset();
-                previousMediaTitle = currentMediaTitle;
-                previousMediaArtists = currentMediaArtists;
                 if (currExpectedPlayerName === "yesplaymusic") {
                     if (nameOfCurrentPlayer === "yesplaymusic") {
-                        lyricText.text = " ";
-                        lyricsWTimes.clear();
                         yesPlayMusicTimer.start();
                         ypmUserInfoTimer.start();
                     }
@@ -351,8 +260,6 @@ PlasmoidItem {
         }
     }
 
-    property bool isYPMLyricFound: false;
-    
     Timer {
         id: yesPlayMusicTimer
         interval: 200
@@ -370,15 +277,18 @@ PlasmoidItem {
             }
         }
     }
-
-    function log() {
-        console.log("currentMediaArtists: ", currentMediaArtists);
-        console.log("previousMediaArtists: ", previousMediaArtists);
-        console.log("currentMediaTitle: ", currentMediaTitle);
-        console.log("previousMediaTitle: ", previousMediaTitle);
-    }
     
-    // compatible mode timer
+    /**
+        Same as above, only one Lyric Fetching Timer will be running.
+        If the:
+            current media artists does not match the previous media artists
+            current media title does not match the previous media title
+            current media title and artists are empty
+        Then we will stop the timer and start a new one.
+
+        Otherwise, we will keep the timer running and fetch the lyric from the lrclib API.
+        
+    */
     Timer {
         id: compatibleModeTimer
         interval: 200
@@ -386,58 +296,85 @@ PlasmoidItem {
         repeat: true
         onTriggered: {
             if ((currentMediaArtists === "" && currentMediaTitle === "") || (currentMediaTitle != previousMediaTitle) || currentMediaArtists != previousMediaArtists) {
-                lyricText.text = " ";
-                lyricsWTimes.clear();
+                reset()
             } else {
-                if (!isCompatibleLRCFound || queryFailed) {
+                if (!isCompatibleLRCFound || needFallback) {
                     fetchLyricsCompatibleMode();
                 }
             }
         }
     }
 
-    // List/Map that storing [{timestamp: xxx, lyric: xxx}, {timestamp: xxx, lyric: xxx}, {timestamp: xxx, lyric: xxx}]
-    ListModel {
-        id: lyricsWTimes
-    }
-
-    // todo: cache the current listModel
-    ListModel {
-        id: cachedlyricsWTimes
+    Timer {
+        id: lyricDisplayTimer
+        interval: 1
+        running: false
+        repeat: true
+        onTriggered: { 
+            if (currentMediaTitle === "Advertisement") {
+                lyricText.text = currentMediaTitle;
+            } else {
+                for (let i = 0; i < lyricsWTimes.count; i++) {
+                    if (lyricsWTimes.get(i).time >= mprisCurrentPlayingSongTimeMS) {
+                        currentLyricIndex = i > 0 ? i - 1 : 0;
+                        var currentLWT = lyricsWTimes.get(currentLyricIndex);
+                        var currentLyric = currentLWT.lyric;
+                        if (!currentLWT || !currentLyric || currentLyric === "" && prevNonEmptyLyric != "") {
+                            lyricText.text = prevNonEmptyLyric;
+                        } else {
+                            lyricText.text = currentLyric;
+                            prevNonEmptyLyric = currentLyric;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     // Global constant
     readonly property string ypm_base_url: "http://localhost:27232"
+    readonly property string lxmusic_base_url: "http://localhost:23330"
     readonly property string lrclib_base_url: "https://lrclib.net"
 
-    // ui variables
-    property string backwardIcon: config_whiteMediaControlIconsChecked ? "../assets/media-backward-white.svg" : "../assets/media-backward.svg"
-    property string pauseIcon: config_whiteMediaControlIconsChecked ? "../assets/media-pause-white.svg" : "../assets/media-pause.svg"
-    property string forwardIcon: config_whiteMediaControlIconsChecked ? "../assets/media-forward-white.svg" : "../assets/media-forward.svg"
-    property string likeIcon: config_whiteMediaControlIconsChecked ? "../assets/media-like-white.svg" : "../assets/media-like.svg"
-    property string likedIcon: "../assets/media-liked.svg"
-    property string cloudMusicIcon: config_whiteMediaControlIconsChecked ? "../assets/netease-cloud-music-white.svg" : "../assets/netease-cloud-music.svg"
-    property string spotifyIcon: config_whiteMediaControlIconsChecked ? "../assets/spotify-white.svg" : "../assets/spotify.svg"
-    property string playIcon: config_whiteMediaControlIconsChecked ? "../assets/media-play-white.svg" : "../assets/media-play.svg"
-    property bool liked: false;
+    // Successfully fetched the lyrics from the yesplaymusic API?
+    property bool isYPMLyricFound: false;
 
-    // config page variable
-    property bool config_yesPlayMusicChecked: Plasmoid.configuration.yesPlayMusicChecked;
-    property bool config_spotifyChecked: Plasmoid.configuration.spotifyChecked;
-    property bool config_compatibleModeChecked: Plasmoid.configuration.compatibleModeChecked;
-    property int config_lyricTextSize: Plasmoid.configuration.lyricTextSize;
-    property string config_lyricTextColor: Plasmoid.configuration.lyricTextColor;
-    property bool config_lyricTextBold: Plasmoid.configuration.lyricTextBold;
-    property bool config_lyricTextItalic: Plasmoid.configuration.lyricTextItalic;
-    property int config_mediaControllSpacing: Plasmoid.configuration.mediaControllSpacing
-    property int config_mediaControllItemSize: Plasmoid.configuration.mediaControllItemSize
-    property int config_mediaControllItemVerticalOffset: Plasmoid.configuration.mediaControllItemVerticalOffset;
-    property int config_lyricTextVerticalOffset: Plasmoid.configuration.lyricTextVerticalOffset
-    property int config_whiteMediaControlIconsChecked: Plasmoid.configuration.whiteMediaControlIconsChecked;
-    property int config_preferedWidgetWidth: Plasmoid.configuration.preferedWidgetWidth;
-    property bool config_hideItemWhenNoControlChecked: Plasmoid.configuration.hideItemWhenNoControlChecked;
+    // Current Media Title (Song's name), default is empty string
+    property string currentMediaTitle: mpris2Model.currentPlayer?.track ?? ""
 
-    //Other Media Player's mpris2 data
+    // Current Media Artists (Song's artist), default is empty string
+    property string currentMediaArtists: mpris2Model.currentPlayer?.artist ?? ""
+
+    // Current Media Album (Song's album), default is empty string
+    property string currentMediaAlbum: mpris2Model.currentPlayer?.album ?? ""
+
+    // Current Media Playback Status (Song's playback status), default is 0
+    property int playbackStatus: mpris2Model.currentPlayer?.playbackStatus ?? 0
+
+    // Retrieve if the current media is playing (Unused)
+    property bool isPlaying: root.playbackStatus === Mpris.PlaybackStatus.Playing
+
+    // Retrieve the name of current music/media player
+    property string nameOfCurrentPlayer: mpris2Model.currentPlayer?.objectName ?? ""
+
+    // Retrieve the current media position (in microseconds)
+    property int position: mpris2Model.currentPlayer?.position ?? 0
+
+    /**
+        A list of dictionaries. Each dictionary contains a timestamp and the corresponding lyric. Below is an example
+
+        [
+            {timestamp: 1, lyric: "Hello"}, 
+            {timestamp: 2, lyric: "World"}, 
+            {timestamp: 3, lyric: "!"}
+        ]
+    */
+    ListModel {
+        id: lyricsWTimes
+    }
+
+    // Other Media Player's mpris2 data
     property int mprisCurrentPlayingSongTimeMS: {
         if (position == 0) {
             return -1;
@@ -446,17 +383,10 @@ PlasmoidItem {
         }
     }
 
-    // [v1.1.3] Store the all the indexes in mpris2Model
-    property int compatibleIndex: -3;
-
-    property int spotifyIndex: -2;
-
-    property int ypmIndex: -1;
-
-    //YesPlayMusic only, don't be misleaded. We can use ypm_base_url + /api/currentMediaYPMId to get lyrics of the current playing song, then upload it to lrclib
+    // YesPlayMusic only, don't get misleaded. We can use http://localhost:27232/api/currentMediaYPMId to get lyrics of the current playing song, then upload it to lrclib
     property string currentMediaYPMId: ""
 
-    //Use to search the next row of lyric in lyricsWTimes
+    // Just the index of the LyricWTimes lists. Retrieve the element from the list using the index. The retrieved element contains a timestamp and the corresponding lyric.
     property int currentLyricIndex: 0
 
     property string previousMediaTitle: ""
@@ -465,10 +395,11 @@ PlasmoidItem {
 
     property string prevNonEmptyLyric: ""
 
+    // The id of the lyric that has been fetched from the lrclib API. Only used in compatible mode when querying the lrclib API.
     property string previousLrcId: ""
 
-    // indicating we need to use the back up fetching strategy
-    property bool queryFailed: false;
+    // Indicating whether we need to use the needFallback fetching strategy
+    property bool needFallback: false;
 
     property bool isCompatibleLRCFound: false;
 
@@ -478,7 +409,6 @@ PlasmoidItem {
 
     property string prevExpectedPlayerName: "";
 
-    // 0: ypm   1: spotify 2: compatible
     property string currExpectedPlayerName: {
         if (config_yesPlayMusicChecked) {
             return "yesplaymusic";
@@ -489,9 +419,9 @@ PlasmoidItem {
         }
     }
 
-    // construct the lrclib's request url
+    // Construct the lrclib's request url
     property string lrcQueryUrl: {
-        if (queryFailed) { // 如果失败了就用歌名做一次模糊查询。lrclib只支持模糊查询一个field.所以只能专辑|歌手名|歌名选一个， 很明显歌名的结果最准确。
+        if (needFallback) { // 如果失败了就用歌名做一次模糊查询。lrclib只支持模糊查询一个field.所以只能专辑|歌手名|歌名选一个， 很明显歌名的结果最准确。
             return lrclib_base_url + "/api/search" + "?track_name=" + encodeURIComponent(currentMediaTitle) + 
                   "&artist_name=" + encodeURIComponent(currentMediaArtists) + "&album_name=" + encodeURIComponent(currentMediaAlbum) + "&q=" 
                   + encodeURIComponent(currentMediaTitle);
@@ -508,13 +438,12 @@ PlasmoidItem {
         } else if (currentMediaTitle && !currentMediaArtists) {
             return currentMediaTitle;
         } else {
-            return "This song doesn't have any lyric";
+            return "This song doesn't contain any lyric/title/artist.";
         }
     }
 
     // fetch the current media id from yesplaymusic(ypm);
     function fetchMediaIdYPM() {
-        //console.log("Start fetching YPM music id");
         var xhr = new XMLHttpRequest();
         xhr.open("GET", ypm_base_url + "/player");
         xhr.onreadystatechange = function() {
@@ -525,7 +454,6 @@ PlasmoidItem {
                         previousMediaTitle = currentMediaTitle;
                         previousMediaArtists = currentMediaArtists;
                         currentMediaYPMId = response.currentTrack.id;
-                        //console.log("Successfully fetched YPM music id");
                         fetchSyncLyricYPM();
                     }
                 }
@@ -536,7 +464,6 @@ PlasmoidItem {
 
     // fetch the current media lyric from yesplaymusic by media id
     function fetchSyncLyricYPM() {
-        //console.log("Start fetching YPM lyric");
         var xhr = new XMLHttpRequest();
         xhr.open("GET", ypm_base_url + "/api/lyric?id=" + currentMediaYPMId);
         xhr.onreadystatechange = function() {
@@ -555,21 +482,28 @@ PlasmoidItem {
         xhr.send();
     }
 
-    //[Feature haven't been implemented]
+    // todo: contribute an lrc file to the lrclib API
     function parseAndUpload(ypmLrc) {
         //console.log("Ypm Lrc", ypmLrc);
     }
 
+    // todo: like the current music after clicking the like icon
     function likeMusicYPM() {
         var xhr = new XMLHttpRequest();
         xhr.open("GET", ypm_base_url + "/api/like" + "?id=");
     }
 
-    // parse the lyric
-    // [["[00:26.64] first row of lyric\n"]], ["[00:29.70] second row of lyric\n]"],etc...]
-    function parseLyric(lyrics) {
-        //console.log("Start parsing Lyrics");
-        var lrcList = lyrics.split("\n");
+    /**
+        Parse the lyric file and convert it to a list of dictionaries. Each dictionary contains a timestamp and the corresponding lyric.
+        The format of the lyric file is as follows:
+        [00:34.33] 妳說這一句 很有夏天的感覺
+        [00:41.06] 手中的鉛筆 在紙上來來回回
+        [00:47.45] 我用幾行字形容妳是我的誰
+        [00:54.19] 秋刀魚 的滋味 貓跟妳都想瞭解
+    */
+    function parseLyric(lrcFile) {
+        console.log(lrcFile)
+        var lrcList = lrcFile.split("\n");
         for (var i = 0; i < lrcList.length; i++) {
             var lyricPerRowWTime = lrcList[i].split("]");
             if (lyricPerRowWTime.length > 1) {
@@ -581,44 +515,57 @@ PlasmoidItem {
         lyricDisplayTimer.start()
     }
 
+    /**
+        ================================================================================================================================================================================
+        If the current media title is advertisement, then we will not query the API. This happens in apps like Spotify and the user is not a premium user.
+        Also, if we've already found the lyric, then we will not spam querying the API.
+        ================================================================================================================================================================================
+        Elsewise, Start querying the lrclib API for the current media title and artists. If the response is empty, then we will go to the fall back mode. 
+        Specifically speaking, check the details in lrcQueryUrl variable.
+        ================================================================================================================================================================================
+        If the response is not empty and the current playing music is different from the previous plyaing music, then we will reset the timer, parse the lyric and display it on the screen. 
+
+    */
     function fetchLyricsCompatibleMode() {
+        if (currentMediaTitle === "Advertisement" || isCompatibleLRCFound) {
+            return;
+        }
+
         var xhr = new XMLHttpRequest();
-        //console.log("Entered fetchlyrics compatible mode.");
         xhr.open("GET", lrcQueryUrl);
         xhr.onreadystatechange = function() {
             if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-                //console.log("[Compatible Mode] Network OK!");
-                if ((currentMediaTitle !== "Advertisement") && !isCompatibleLRCFound) { //Advertisement
-                    //console.log("Start parsing fetch result.");
-                    if (!xhr.responseText || xhr.responseText === "[]") {
-                        //console.log("[Compatible Mode] Failed to get the lyrics.");
-                        queryFailed = true;
-                        previousLrcId = Number.MIN_VALUE;
-                        lyricsWTimes.clear();
-                        lyricText.text = lrc_not_exists;
-                    } else {
-                        var response = JSON.parse(xhr.responseText)
-                        queryFailed = false;
-                        if (response && response.length > 0 && previousLrcId !== response[0].id.toString()) { //会出现 Spotify传给Mpris的歌曲名 与 lrclib中的歌曲名不一样的情况，改用id判断
-                            lyricsWTimes.clear();
-                            //console.log("[Compatible Mode] Get the desired lyric!");
-                            previousMediaTitle = currentMediaTitle;
-                            previousMediaArtists = currentMediaArtists;
-                            previousLrcId = response[0].id.toString();
-                            isCompatibleLRCFound = true;
-                            parseLyric(response[0].syncedLyrics);
-                        } else {
-                            lyricsWTimes.clear();
-                            lyricText.text = lrc_not_exists;
-                        }
+                if (!xhr.responseText || xhr.responseText === "[]") {
+                    needFallback = true;
+                    previousLrcId = Number.MIN_VALUE;
+                    lyricsWTimes.clear();
+                    lyricText.text = lrc_not_exists;
+                } else {
+                    var response = JSON.parse(xhr.responseText);
+                    needFallback = false;
+                    if (response.length > 0 && previousLrcId !== response[0].id.toString()) {
+                        reset()
+                        previousLrcId = response[0].id.toString();
+                        isCompatibleLRCFound = true;
+                        parseLyric(response[0].syncedLyrics);
                     }
-                }      
+                }
             }
         };
         xhr.send();
     }
+ 
 
-    // parse time, ignore miliseconds
+    function log() {
+        console.log("currentMediaArtists: ", currentMediaArtists);
+        console.log("previousMediaArtists: ", previousMediaArtists);
+        console.log("currentMediaTitle: ", currentMediaTitle);
+        console.log("previousMediaTitle: ", previousMediaTitle);
+        console.log("Mpris2 Model: ", JSON.stringify(mpris2Model))
+        console.log(mpris2Model);
+        console.log(mpris2Model.toString());
+    }
+
     function parseTime(timeString) {
         var parts = timeString.split(":");
         var minutes = parseInt(parts[0], 10);
@@ -650,7 +597,7 @@ PlasmoidItem {
         }
     }
 
-    // [v1.1.3] Fix the problem of current playing media doesn't match the selected mode.
+    // Fix the problem of current playing media doesn't match the selected mode.
     function isWrongPlayer() {
         if (nameOfCurrentPlayer != currExpectedPlayerName) {
             if (currExpectedPlayerName == "compatible") {
@@ -662,64 +609,155 @@ PlasmoidItem {
         return false;
     }
 
+    /**
+        1. Stop the compatible mode timer and yesplaymusic timer.
+        2. Set the previous media title and artists to the current media title and artists.
+        3. Set the previous player name to the current player name.
+        4. Set the previous expected player name to the current expected player name
+        5. Clear the lyricsWTimes list.
+        6. Clear the previous non empty lyric.
+        7. Clear the previous lrc id.
+        8. 
+    */
     function reset() {
-        //console.log("entered")
         compatibleModeTimer.stop();
         yesPlayMusicTimer.stop();
-        ypmUserInfoTimer.stop();
-        previousMediaTitle = "";
-        previousMediaArtists = "";
+        previousMediaTitle = currentMediaTitle;
+        previousMediaArtists = currentMediaArtists;
+        nameOfPreviousPlayer = nameOfCurrentPlayer;
+        prevExpectedPlayerName = currExpectedPlayerName;
         lyricsWTimes.clear();
         prevNonEmptyLyric = "";
         previousLrcId = "";
-        queryFailed = false;
+        needFallback = false;
         lyricText.text = " ";
         isCompatibleLRCFound = false;
         isYPMLyricFound = false;
     }
 
-    function getUserDetail() {
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", ypm_base_url + "/api/user/detail?uid=" + neteaseID);
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-                if (xhr.responseText && xhr.responseText !== "[]") {
-                    var response = JSON.parse(xhr.responseText);
-                    ypmUserName = "你好， " + response.profile.nickname;
-                    ypmCreateDays.text = "您已加入云村: " + response.createDays + "天";
-                    ypmSongsListened.text = "总计听歌:" + response.listenSongs + "首";
-                    ypmFollowed.text = "粉丝: " + response.profile.followeds;
-                    ypmFollow.text =  "关注: " + response.profile.follows;
-                }
-            }
-        };
-        xhr.send();
-    }
+    /**
+        This part is going to be enabled after we have a better backend instead of hybriding the GUI and backend logic in this same main.qml file. A qml file with more than 1000
+    lines of code looks really horrible. Plus the Thus I'm planning to refact the current code with a C++ or Python backend. Or, alternatively, just use tauri or electron to rewrite 
+    this widget with cross platform capability. 
 
-    Timer {
-        id: lyricDisplayTimer
-        interval: 1
-        running: false
-        repeat: true
-        onTriggered: { 
-            if (currentMediaTitle === "Advertisement") { // Aim to solve Spotify non-premium bug report
-                lyricText.text = currentMediaTitle;
-            } else {
-                for (let i = 0; i < lyricsWTimes.count; i++) {
-                    if (lyricsWTimes.get(i).time >= mprisCurrentPlayingSongTimeMS) {
-                        currentLyricIndex = i > 0 ? i - 1 : 0;
-                        var currentLWT = lyricsWTimes.get(currentLyricIndex);
-                        var currentLyric = currentLWT.lyric;
-                        if (!currentLWT || !currentLyric || currentLyric === "" && prevNonEmptyLyric != "") {
-                            lyricText.text = prevNonEmptyLyric;
-                        } else {
-                            lyricText.text = currentLyric;
-                            prevNonEmptyLyric = currentLyric;
-                        }
-                        break;
-                    }
-                }
-            }
-        }
-    }
+        The backend should contain all the lyrics fetching logic, and exposed locally as a general lyrics fetching API. And this qml widget will only serve as frontend -- respon
+    -sible for displaying lyrics and those icons.
+    */
+
+    // property bool dialogShowed: false;
+    // property bool ypmLogined: false;
+    // property string ypmUserName: "";
+    // property string ypmCookie: "";
+    // property string csrf_token: ""
+    // property string neteaseID: ""
+    // property bool currentMusicLiked: false
+
+    // PlasmaCore.Dialog {
+    //     id: menuDialog
+        
+    //     visible: false
+    //     width: column.implicitWidth
+    //     height: column.implicitHeight
+
+    //     Column {
+    //         spacing: 5
+
+    //         PlasmaComponents.MenuItem {
+    //             id: userInfoMenuItem
+    //             visible: true
+    //             text: ypmLogined ? ypmUserName : i18n("登录")
+
+    //             onTriggered: {
+    //                 if (!ypmLogined) {
+    //                    userInfoMenuItem.visible = false;
+    //                    cookieTextField.visible = true;
+    //                 }
+    //             }
+    //         }
+
+    //         PlasmaComponents.TextField {
+    //             id: cookieTextField
+    //             visible: false
+    //             placeholderText: i18n("Enter your Netease ID")
+
+    //             onAccepted: {
+    //                 ypmLogined = true
+    //                 userInfoMenuItem.visible = true;
+    //                 cookieTextField.visible = false;
+    //                 neteaseID = cookieTextField.text
+    //                 //need to add a cookie validation in the future 
+    //             }
+    //         }
+
+    //         PlasmaComponents.MenuItem {
+    //             id: ypmCreateDays
+    //             visible: true // todo: 可以用ypmLogined做判定，但是有bug。会导致登录后元素显示不全。先这样子吧。
+    //                             //edit: 估计是menuitem默认字体高宽的的问题。有空再搞。
+    //             text: ""
+    //         }
+
+    //         PlasmaComponents.MenuItem {
+    //             id: ypmSongsListened
+    //             visible: true
+    //             text: ""
+    //         }
+
+    //         PlasmaComponents.MenuItem {
+    //             id: ypmFollowed
+    //             visible: true
+    //             text: ""
+    //         }
+
+    //         PlasmaComponents.MenuItem {
+    //             id: ypmFollow
+    //             visible: true
+    //             text: "需要登录"
+    //         }
+            
+    //         PlasmaComponents.MenuItem {
+    //             id: logout
+    //             visible: true
+    //             text: "登出" // i18n
+
+    //             onTriggered: {
+    //                 ypmLogined = false;
+    //                 neteaseID = ""
+    //                 ypmSongsListened.text = ""; 
+    //                 ypmFollowed.text = "";
+    //                 ypmFollow.text = "";
+    //                 ypmCreateDays.text = "";
+    //             }
+    //         }
+    //     }
+    // }
+
+    // Timer {
+    //     id: ypmUserInfoTimer
+    //     interval: 1000
+    //     running: false
+    //     repeat: true
+    //     onTriggered: {
+    //         if (ypmLogined) {
+    //             getUserDetail();
+    //         }
+    //     }
+    // }
+
+    // function getUserDetail() {
+    //     var xhr = new XMLHttpRequest();
+    //     xhr.open("GET", ypm_base_url + "/api/user/detail?uid=" + neteaseID);
+    //     xhr.onreadystatechange = function() {
+    //         if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+    //             if (xhr.responseText && xhr.responseText !== "[]") {
+    //                 var response = JSON.parse(xhr.responseText);
+    //                 ypmUserName = "你好， " + response.profile.nickname;
+    //                 ypmCreateDays.text = "您已加入云村: " + response.createDays + "天";
+    //                 ypmSongsListened.text = "总计听歌:" + response.listenSongs + "首";
+    //                 ypmFollowed.text = "粉丝: " + response.profile.followeds;
+    //                 ypmFollow.text =  "关注: " + response.profile.follows;
+    //             }
+    //         }
+    //     };
+    //     xhr.send();
+    // }
 }
