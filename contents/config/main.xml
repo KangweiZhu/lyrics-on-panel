@@ -42,6 +42,9 @@
         <entry name="preferedWidgetWidth" type="String">
             <default>550</default>
         </entry>
+        <entry name="hideItemWhenNoControlChecked" type="Bool">
+            <default>true</default>
+        </entry>
     </group>
 
     <!-- <group name="Notification">
