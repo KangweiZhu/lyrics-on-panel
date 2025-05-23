@@ -44,7 +44,7 @@ PlasmoidItem {
 
     Text {
         id: lyricText
-        text: "Please open the configuration of this widget and read the developer's note!"
+        text: ""
         color: config_lyricTextColor
         font.pixelSize: config_lyricTextSize
         font.bold: config_lyricTextBold
