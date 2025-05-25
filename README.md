@@ -137,15 +137,11 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
 
 
 
-
-
 1. 推荐使用 KDE 官网提供的图形界面方式，详见[此链接](https://userbase.kde.org/Plasma/Installing_Plasmoids)。  
 
    > Use the GUI operation recommended by the KDE official website at [this link](https://userbase.kde.org/Plasma/Installing_Plasmoids).  
 
    ​    
-
-   
 
    
 
