@@ -1,6 +1,12 @@
 <h1 align="center">Lyrics-on-Panel</h1>
 
 <p align="center">
+  <a href="https://drive.google.com/file/d/1wo_2CpBg5cgbhNJqyb9LIaSVA5LmSR2S/view?usp=drive_link" target="_blank">
+  	点击查看DEMO视频 (Watch demo video)
+  </a>
+</p>
+
+<p align="center">
   <img src="img/image-panel-onlythiswidget.png" alt="Plasma Lyric Panel Demo" width="500"/>
 </p>
 <p align="center"><b><code>在屏幕的任何地方显示正在播放音乐的歌词  
@@ -17,11 +23,15 @@
 
   
 
+  
+
 
 
 Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能， 以及Bug修复都尚未应用在Plasma5版本。
 
 > Plasma5 version is **usable but outdated**. Many features and bug fixes introduced in the new version are not applied to the Plasma5 version.
+
+  
 
   
 
@@ -33,7 +43,9 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
 
 > This plugin perfectly replicates the top-bar lyrics display feature of NetEase Cloud Music on macOS.  
 
-  
+​    
+
+
 
 
 
@@ -43,11 +55,15 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
 
   
 
+  
+
 
 
 ---
 
-  
+​    
+
+
 
 
 
@@ -64,7 +80,9 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
     * Netease Cloud Music (Not wine version)
     * Apple Music
 
-  
+​    
+
+
 
 
 
@@ -77,7 +95,9 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
      
      > Fetches lyrics of the currently playing music from the local port exposed by YesPlayMusic. 
      
-       
+        
+     
+      
      
      
      
@@ -86,7 +106,9 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
     
      > Fetches lyrics of the currently playing music from the local port exposed by LX Music. 
      
-       
+     ​    
+     
+     
      
      
      
@@ -95,14 +117,18 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
   
      > Fetches lyrics from the [Lrclib](https://lrclib.net/) lyrics database by precisely matching the `artist`, `music(track) title`, and `album name`. If no result is found, then fallback to a fuzzy search using only the **song title**. 
 
-  
+​    
+
+
 
 
 
 
 ---
 
-  
+​    
+
+
 
 
 
@@ -111,7 +137,9 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
 有两种方式可选：  
 > As for installing the widget, you will have 2 approaches:  
 
-  
+​    
+
+
 
 
 
@@ -119,7 +147,9 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
 
    > Use the GUI operation recommended by the KDE official website at [this link](https://userbase.kde.org/Plasma/Installing_Plasmoids).  
 
-     
+   ​    
+
+   
 
    
 
@@ -134,7 +164,9 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
    kpackagetool6 -t Plasma/Applet -i .
    ```
 
-  
+​    
+
+
 
 
 
@@ -149,9 +181,13 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
 
   
 
+  
+
 
 
 ---
+
+  
 
   
 
@@ -161,9 +197,15 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
 
 > Under KDE Plasma 5  
 
-![Plasma5 展示](img/image-20240317192855544.png "Fullscreen shortcut")
+![Plasma5 展示](img/image-20240317192855544.png "Fullscreen shortcut")  
+
+  
+
+
 
 ---
+
+  
 
   
 
@@ -180,9 +222,13 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
 
   
 
+  
+
 
 
 ---
+
+  
 
   
 
@@ -194,9 +240,13 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
 
 ![image-20250525014042601](img/README/image-20250525014042601.png)  
 
+  
+
 
 
 ---
+
+  
 
   
 
@@ -209,3 +259,5 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
 <p align="center">
   <img src="img/README/image-20250525013647423.png" alt="Customizing Components">
 </p>
+  
+
