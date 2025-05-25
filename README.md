@@ -25,8 +25,6 @@
 
   
 
-
-
 Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能， 以及Bug修复都尚未应用在Plasma5版本。
 
 > Plasma5 version is **usable but outdated**. Many features and bug fixes introduced in the new version are not applied to the Plasma5 version.
@@ -34,8 +32,6 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
   
 
   
-
-
 
 ### 功能介绍  (Features)
 
