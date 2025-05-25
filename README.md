@@ -136,10 +136,8 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
    kpackagetool6 -t Plasma/Applet -i .
    ```
 
-​    
-
-
-
+ 
+---
 ### 展示（Showcase）  
 
 #### KDE Plasma6（配合 [**Panel Coloizer**](https://github.com/luisbocanegra/plasma-panel-colorizer)）
