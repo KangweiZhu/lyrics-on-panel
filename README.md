@@ -13,13 +13,17 @@
 
 当前仓库版本仅在 **KDE Plasma 6** 下工作。 如需要 **KDE Plasma5** 版本，请在 [**KDE Store**](https://store.kde.org/p/2138263) 或 [**Plasma5 分支**](https://github.com/KangweiZhu/lyrics-on-panel/tree/plasma5) 进行下载。
 
-> The current repository version only supports **KDE Plasma 6**. If you need the **KDE Plasma5** version, please download it from the [**KDE Store**](https://store.kde.org/p/2138263) or the [**Plasma5 branch**](https://github.com/KangweiZhu/lyrics-on-panel/tree/plasma5).
+> The current repository version only supports **KDE Plasma 6**. If you need the **KDE Plasma5** version, please download it from the [**KDE Store**](https://store.kde.org/p/2138263) or the [**Plasma5 branch**](https://github.com/KangweiZhu/lyrics-on-panel/tree/plasma5).  
+
+  
 
 
 
 Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能， 以及Bug修复都尚未应用在Plasma5版本。
 
 > Plasma5 version is **usable but outdated**. Many features and bug fixes introduced in the new version are not applied to the Plasma5 version.
+
+  
 
 
 
@@ -29,15 +33,21 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
 
 > This plugin perfectly replicates the top-bar lyrics display feature of NetEase Cloud Music on macOS.  
 
+  
+
 
 
 👉 原始效果参考：[CSDN 博文链接](https://blog.csdn.net/weixin_34061200/article/details/112693092)  
 
 > 👉 For the original effect reference, see: [CSDN Blog Link](https://blog.csdn.net/weixin_34061200/article/details/112693092)   
 
+  
+
 
 
 ---
+
+  
 
 
 
@@ -54,6 +64,8 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
     * Netease Cloud Music (Not wine version)
     * Apple Music
 
+  
+
 
 
 * 根据歌曲信息，采用三套逻辑进行歌词抓取：  
@@ -65,12 +77,16 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
      
      > Fetches lyrics of the currently playing music from the local port exposed by YesPlayMusic. 
      
+       
+     
      
      
   2. LX Music 模式 (LX Music Mode)  **[lx-music-desktop](https://github.com/lyswhut/lx-music-desktop)**  
        从 LX Music 暴露在本地的端口获取当前播放歌曲的歌词  
     
      > Fetches lyrics of the currently playing music from the local port exposed by LX Music. 
+     
+       
      
      
      
@@ -79,10 +95,14 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
   
      > Fetches lyrics from the [Lrclib](https://lrclib.net/) lyrics database by precisely matching the `artist`, `music(track) title`, and `album name`. If no result is found, then fallback to a fuzzy search using only the **song title**. 
 
+  
+
 
 
 
 ---
+
+  
 
 
 
@@ -91,11 +111,15 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
 有两种方式可选：  
 > As for installing the widget, you will have 2 approaches:  
 
+  
+
 
 
 1. 推荐使用 KDE 官网提供的图形界面方式，详见[此链接](https://userbase.kde.org/Plasma/Installing_Plasmoids)。  
 
    > Use the GUI operation recommended by the KDE official website at [this link](https://userbase.kde.org/Plasma/Installing_Plasmoids).  
+
+     
 
    
 
@@ -110,6 +134,8 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
    kpackagetool6 -t Plasma/Applet -i .
    ```
 
+  
+
 
 
 
@@ -119,10 +145,15 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
 #### KDE Plasma6（配合 [**Panel Coloizer**](https://github.com/luisbocanegra/plasma-panel-colorizer)）
 > Under KDE Plasma 6 (With [**Panel Coloizer**](https://github.com/luisbocanegra/plasma-panel-colorizer)).
 
-
 ![Plasma6 展示](img/image-20240529024104188.png)
 
+  
+
+
+
 ---
+
+  
 
 
 
@@ -134,16 +165,26 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
 
 ---
 
+  
+
 
 
 #### 仅在面板中显示（Panel Only）  
 
 > Display only on Panel Only  
+>
+> 
 
 ![Panel 展示1](img/image-20240529023754367.png)  
 ![Panel 展示2](img/image-20240529023819659.png)
 
+  
+
+
+
 ---
+
+  
 
 
 
@@ -151,9 +192,13 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
 
 > Synchronized lyrics  
 
-![image-20250525014042601](img/README/image-20250525014042601.png)
+![image-20250525014042601](img/README/image-20250525014042601.png)  
+
+
 
 ---
+
+  
 
 
 
