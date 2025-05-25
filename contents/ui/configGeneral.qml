@@ -10,19 +10,24 @@ Kirigami.FormLayout {
     signal configurationChanged
 
     property alias cfg_yesPlayMusicChecked: yesPlayMusicPropriataryRadioButton.checked 
-    property alias cfg_spotifyChecked: spotifyPropriataryRadioButton.checked   
+    property alias cfg_spotifyChecked: spotifyPropriataryRadioButton.checked  
+    property alias cfg_lxMusicChecked: lxMusicPropriataryRadioButton.checked   
     property alias cfg_compatibleModeChecked: compatibleModeRadioButton.checked
+
     property alias cfg_lyricTextSize: lyricTextSizeSpinBox.value 
     property alias cfg_lyricTextColor: lyricTextColorButton.color
     property alias cfg_lyricTextBold: boldButton.checked   
     property alias cfg_lyricTextItalic: italicButton.checked 
     property alias cfg_lyricTextVerticalOffset: lyricTextVerticalOffsetSpinBox.value
+
     property alias cfg_mediaControllSpacing: mediaControllSpacingSpinBox.value
     property alias cfg_mediaControllItemSize: mediaControllItemSizeSpinBox.value
     property alias cfg_mediaControllItemVerticalOffset: mediaControllItemVerticalOffsetSpinBox.value
     property alias cfg_whiteMediaControlIconsChecked: whiteMediaControlIconsChecked.checked
+
     property alias cfg_preferedWidgetWidth: preferedWidgetWidthTextField.text
     property alias cfg_hideItemWhenNoControlChecked: hideItemWhenNoControlChecked.checked
+    property alias cfg_lxMusicPort: lxMusicPortTextField.text
 
     QQC2.RadioButton {
         id: yesPlayMusicPropriataryRadioButton
@@ -33,6 +38,11 @@ Kirigami.FormLayout {
     QQC2.RadioButton {
         id: spotifyPropriataryRadioButton
         text: i18n("Spotify")
+    }
+
+    QQC2.RadioButton {
+        id: lxMusicPropriataryRadioButton
+        text: i18n("LX Music")
     }
 
     QQC2.RadioButton {
@@ -107,6 +117,13 @@ Kirigami.FormLayout {
         Kirigami.FormData.label: i18n("Hide Item When No Media Control: ")
         checkable: true
     }
+
+    QQC2.TextField {
+        id: lxMusicPortTextField
+        Kirigami.FormData.label: i18n("LX Music Local Port: ")
+        enabled: lxMusicPropriataryRadioButton.checked
+    }
+
     // trackName	true	string	Title of the track
     // artistName	true	string	Track's artist name
     // albumName	true	string	Track's album name

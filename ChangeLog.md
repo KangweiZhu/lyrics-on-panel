@@ -18,4 +18,32 @@
 3. Fixed the problem where lyrics from Spotify would still appear even when the mode is switched to YesPlayMusic.
 4. Now you can control the width of this widget on the configuration page.
 
-## [1.1.4] 05/23/2025 Last Version 
+## [1.1.4] 05/23/2025 Final Pure-QML Edition
+> I will not make any feature update for the **current pure-QML version** of this KDE Plasma Widget. However, bug fixes will still be maintained.
+
+I am planning to make a python backend for lyrics fetching and for more advanced features e.g,. Star/Like the current playing music through making a request towards those online streaming platform. The main reason why I am giveup writting backend through pure-QML or QML + QT is simply because QML itself cannot make modern HTTP requests, and using C++ to build a 'compromised' Network QML Plugin under KFrameworks seems really stupid and causing extra time.
+
+In the upcoming release(temporarily call as lyrics-on-panel6 v2), users can:
+
+* Still able to download this widget from KDE / Pling.
+
+* The widget is by default, no difference with that of current version. But, user could select and enable a **python backend** in the configuration page. User then will need to download the python script from certain Repo, and running it at backend(TBD, maybe a login item, or a system service, or both). 
+
+### Key changes
+1. The panel background is configurably transparent now. ([benchile55](https://github.com/KangweiZhu/lyrics-on-panel/issues/8))
+2. The default text("check developer's note") is now removed. ([ShayBox](https://github.com/KangweiZhu/lyrics-on-panel/issues/9))
+3. Users could choose hide this widget when there is no lyrics ([uiYzzi](https://github.com/KangweiZhu/lyrics-on-panel/pull/6))
+4. Milliseconds are now included in lyric timestamp parsing (previously only minutes and seconds were parsed from LRC files).
+5. Now Spotify / YesPlayMusic mode will correctly display the current track's title and artists(if there are) when lyrics are not found.
+6. Now, in Spotify / Compatible(now called as Global) mode, the widget will correctly handle multiple results for the same song returned by querying LrcLib one time, and only pick the one that contains syncedLyrics.
+7. The widgets is supporting **LX-Music Mode** Now!
+8. The Compatible mode has been fixed and renamed to **Global mode**.
+> In Global mode, playback control icons are always interactable regardless of the currently active media source.
+
+This differs from app-specific modes (e.g., Spotify mode or YesPlayMusic mode), where — if multiple media apps are active and the currently playing media source (as reported by the QML Mpris2Source object) does not match the selected mode — the playback icons will be disabled, even if music is playing from the selected mode. This is a defect in Plasma6, as KDE devs haven't implemented the Mpris.MultiplexerModel.
+
+
+
+
+
+

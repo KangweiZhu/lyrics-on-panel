@@ -181,20 +181,25 @@ PlasmoidItem {
 
     // Applet UI behavior configuration
     property bool config_yesPlayMusicChecked: Plasmoid.configuration.yesPlayMusicChecked;
+    property bool config_lxMusicChecked: Plasmoid.configuration.lxMusicChecked;
     property bool config_spotifyChecked: Plasmoid.configuration.spotifyChecked;
     property bool config_compatibleModeChecked: Plasmoid.configuration.compatibleModeChecked;
+
     property int config_lyricTextSize: Plasmoid.configuration.lyricTextSize;
     property string config_lyricTextColor: Plasmoid.configuration.lyricTextColor;
     property bool config_lyricTextBold: Plasmoid.configuration.lyricTextBold;
     property bool config_lyricTextItalic: Plasmoid.configuration.lyricTextItalic;
+    property int config_lyricTextVerticalOffset: Plasmoid.configuration.lyricTextVerticalOffset
+
     property int config_mediaControllSpacing: Plasmoid.configuration.mediaControllSpacing
     property int config_mediaControllItemSize: Plasmoid.configuration.mediaControllItemSize
     property int config_mediaControllItemVerticalOffset: Plasmoid.configuration.mediaControllItemVerticalOffset;
-    property int config_lyricTextVerticalOffset: Plasmoid.configuration.lyricTextVerticalOffset
+
     property int config_whiteMediaControlIconsChecked: Plasmoid.configuration.whiteMediaControlIconsChecked;
     property int config_preferedWidgetWidth: Plasmoid.configuration.preferedWidgetWidth;
     property bool config_hideItemWhenNoControlChecked: Plasmoid.configuration.hideItemWhenNoControlChecked;
 
+    property int config_lxMusicPort: Plasmoid.configuration.lxMusicPort;
 
     /**
     ===============================================================================================================================================================================
@@ -264,7 +269,7 @@ PlasmoidItem {
         id: yesPlayMusicTimer
         interval: 200
         running: false
-        repeat: true
+        repeat: false
         onTriggered: {
             compatibleModeTimer.stop();
             if (currentMediaArtists === "" && currentMediaTitle === "") {
@@ -293,7 +298,7 @@ PlasmoidItem {
         id: compatibleModeTimer
         interval: 200
         running: false
-        repeat: true
+        repeat: false
         onTriggered: {
             if ((currentMediaArtists === "" && currentMediaTitle === "") || (currentMediaTitle != previousMediaTitle) || currentMediaArtists != previousMediaArtists) {
                 reset()
@@ -334,7 +339,9 @@ PlasmoidItem {
 
     // Global constant
     readonly property string ypm_base_url: "http://localhost:27232"
-    readonly property string lxmusic_base_url: "http://localhost:23330"
+    readonly property string lxmusic_base_url: {
+        return "http://localhost:" + config_lxMusicPort;
+    }
     readonly property string lrclib_base_url: "https://lrclib.net"
 
     // Successfully fetched the lyrics from the yesplaymusic API?
@@ -405,8 +412,6 @@ PlasmoidItem {
 
     property string nameOfPreviousPlayer: ""
 
-    property string base64Image: ""
-
     property string prevExpectedPlayerName: "";
 
     property string currExpectedPlayerName: {
@@ -476,6 +481,10 @@ PlasmoidItem {
                     isYPMLyricFound = true;
                     parseLyric(response.lrc.lyric);
                     //parseAndUpload(response.lrc.lyric);
+                } else if (!response.lrc || !response.lrc.lyric) {
+                    //console.log("YPM lyric not found");
+                    lyricsWTimes.clear();
+                    lyricText.text = lrc_not_exists;
                 }
             }
         };
@@ -502,7 +511,7 @@ PlasmoidItem {
         [00:54.19] 秋刀魚 的滋味 貓跟妳都想瞭解
     */
     function parseLyric(lrcFile) {
-        console.log(lrcFile)
+        // console.log(lrcFile)
         var lrcList = lrcFile.split("\n");
         for (var i = 0; i < lrcList.length; i++) {
             var lyricPerRowWTime = lrcList[i].split("]");
@@ -542,13 +551,32 @@ PlasmoidItem {
                     lyricText.text = lrc_not_exists;
                 } else {
                     var response = JSON.parse(xhr.responseText);
-                    needFallback = false;
-                    if (response.length > 0 && previousLrcId !== response[0].id.toString()) {
-                        reset()
-                        previousLrcId = response[0].id.toString();
-                        isCompatibleLRCFound = true;
-                        parseLyric(response[0].syncedLyrics);
+
+                    /**
+                        Fix: LrcLib might return multiple result for the same [track_name, artist_name, album_name], some of the result doesn't contain the syncedLyrics field.
+
+                        An example could be as listed below
+                        [
+                            {"id":13957,"name":"Jar Of Love","trackName":"Jar Of Love","artistName":"Wanting","albumName":"Everything In The World", xxx},
+                            {"id":18131162,"name":"Jar Of Love","trackName":"Jar Of Love","artistName":"Wanting 曲婉婷","albumName":"Everything In The World","duration":229.026667, xxxx}
+                        ]
+                    */
+                    for (var i = 0; i < response.length; i++) {
+                        var responseItem = response[i]
+                        if (previousLrcId !== responseItem.id.toString()) {
+                            if (responseItem.syncedLyrics) {
+                                reset()
+                                previousLrcId = responseItem.id.toString();
+                                isCompatibleLRCFound = true;
+                                parseLyric(responseItem.syncedLyrics);
+                                break;
+                            } 
+                        }
                     }
+
+                    // If reached here, it means the lrc file is just broken or doesn't follow the standard format. No need to fallback again since actually we can retrieve it. 
+                    isCompatibleLRCFound = true;
+                    lyricText.text = lrc_not_exists;
                 }
             }
         };
@@ -617,7 +645,9 @@ PlasmoidItem {
         5. Clear the lyricsWTimes list.
         6. Clear the previous non empty lyric.
         7. Clear the previous lrc id.
-        8. 
+        8. Set the fallback mode to false, meaning that first query the lrclibAPI with precise matching, if failed, then go to the fallback mode.
+        9. Set compatibleLRCFound to false, meaning that we haven't found the lyric yet(From LrcLib for compatible(global)/spotify mode).
+        10. Set isYPMLyricFound to false, meaning that we haven't found the lyric yet(From YPM, YPM mode only).
     */
     function reset() {
         compatibleModeTimer.stop();
@@ -651,6 +681,8 @@ PlasmoidItem {
     // property string csrf_token: ""
     // property string neteaseID: ""
     // property bool currentMusicLiked: false
+    
+    // property string base64Image: "" # should be used as QR code login
 
     // PlasmaCore.Dialog {
     //     id: menuDialog

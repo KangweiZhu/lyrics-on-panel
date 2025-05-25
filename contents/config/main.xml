@@ -6,6 +6,9 @@
         <entry name="yesPlayMusicChecked" type="Bool">
             <default>false</default>
         </entry>
+        <entry name="lxMusicChecked" type="Bool">
+            <default>false</default>
+        </entry>
         <entry name="spotifyChecked" type="Bool">
             <default>true</default>
         </entry>
@@ -44,6 +47,9 @@
         </entry>
         <entry name="hideItemWhenNoControlChecked" type="Bool">
             <default>true</default>
+        </entry>
+        <entry name="lxMusicPort" type="Int">
+            <default>23330</default>
         </entry>
     </group>
 
