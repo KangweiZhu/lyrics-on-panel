@@ -10,10 +10,10 @@
             <default>false</default>
         </entry>
         <entry name="spotifyChecked" type="Bool">
-            <default>true</default>
+            <default>false</default>
         </entry>
         <entry name="compatibleModeChecked" type="Bool">
-            <default>false</default>
+            <default>true</default>
         </entry>
         <entry name="lyricTextSize" type="Int">
             <default>13</default>

@@ -1,71 +1,166 @@
-# Plasma6-Lyric-on-panel
-![alt text](img/image-panel-onlythiswidget.png)
+<h1 align="center">Lyrics-on-Panel</h1>
 
-> 适配最新的 **Plasma6** 桌面环境, Plasma5版本请移步 **master branch**
->
-> **近乎完美地**实现了 MacOS 下 网易云音乐 的 歌词顶栏显示 功能
->
-> MacOS原效果参考：https://blog.csdn.net/weixin_34061200/article/details/112693092 
->
-> 采用两套逻辑： 
->
->  	1. YesPlayMusic （YPM）： 直接从 YPM 暴露在本地的端口获取 当前播放歌曲的歌词
->  	2. Compatible（兼容）： 从 Lrclib开源 歌词数据库中 通过（歌手，曲名，专辑名）fetch歌词。 若 不存在这三个参数的 精确匹配的结果，则用歌曲名做一次模糊查询
->
-> 通过 Mpris2数据源 获取当前播放音乐的所属媒体源。兼容模式理论适用于**所有正确实现了 Mpris2 规范的播放器**。其中包括通过 Google Chrome 在线播放的流媒体平台。兼容模式下， 主流歌曲 **歌词匹配成功率** **超过95%**
+<p align="center">
+  <img src="img/image-panel-onlythiswidget.png" alt="Plasma Lyric Panel Demo" width="500"/>
+</p>
+<p align="center"><b><code>在屏幕的任何地方显示正在播放音乐的歌词  
+</code></b></p>
+<p align="center"><b><code>Display lyrics of the currently playing music anywhere on the screen</code></b></p>
 
 
 
-## 0. Change Log
+### 目前版本
 
-See here: [ChangeLog](./ChangeLog.md)
+当前仓库版本仅在 **KDE Plasma 6** 下工作。 如需要 **KDE Plasma5** 版本，请在 [**KDE Store**](https://store.kde.org/p/2138263) 或 [**Plasma5 分支**](https://github.com/KangweiZhu/lyrics-on-panel/tree/plasma5) 进行下载。
+
+> The current repository version only supports **KDE Plasma 6**. If you need the **KDE Plasma5** version, please download it from the [**KDE Store**](https://store.kde.org/p/2138263) or the [**Plasma5 branch**](https://github.com/KangweiZhu/lyrics-on-panel/tree/plasma5).
 
 
 
-## 1. Installation Guide
+Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能， 以及Bug修复都尚未应用在Plasma5版本。
 
-As for installing the widget, you will have 2 approaches:
+> Plasma5 version is **usable but outdated**. Many features and bug fixes introduced in the new version are not applied to the Plasma5 version.
 
-1. Use the GUI operation recommended by the KDE official website at [this link](https://userbase.kde.org/Plasma/Installing_Plasmoids).
 
-2. In the terminal, type `kpackagetool5 -t Plasma/Applet -i xxxx`, replacing `xxxx` with the path to your extracted folder. e.g. `/home/anicaa/.local/share/plasma/plasmoids/lyrics-on-panel-master`. If you already install this widget, or you failed to install this widget, please try `kpackagetool5 -t Plasma/Applet -r xxxx`
+
+### 功能介绍  (Features)
+
+本插件**完美还原**了MacOS 下「网易云音乐/QQ音乐」的歌词顶栏显示功能。  
+
+> This plugin perfectly replicates the top-bar lyrics display feature of NetEase Cloud Music on macOS.  
+
+
+
+👉 原始效果参考：[CSDN 博文链接](https://blog.csdn.net/weixin_34061200/article/details/112693092)  
+
+> 👉 For the original effect reference, see: [CSDN Blog Link](https://blog.csdn.net/weixin_34061200/article/details/112693092)   
+
+
+
+---
+
+
+
+### 工作原理  (How it works)
+
+* 从Mpris2数据源中获取当前播放歌曲以及播放器的信息。全局模式适用于所有正确实现了**[MPRIS2 规范](https://specifications.freedesktop.org/mpris-spec/latest/)** 的播放器。
+
+  > Retrieve information of currently playing music and music-player from the MPRIS2 data source. The Global Mode mentioned below is compatible and should work with any players that correctly implement the **[MPRIS2 specification](https://specifications.freedesktop.org/mpris-spec/latest/)**.
+
+  * 目前已知支持(Currently tested with)：
+    * Spotify
+    * LX Music 
+    * Youtube Music
+    * Netease Cloud Music (Not wine version)
+    * Apple Music
+
+
+
+* 根据歌曲信息，采用三套逻辑进行歌词抓取：  
+
+  > This plugin uses three approaches to fetch lyrics:
+
+  1. YesPlayMusic模式 (YesPlayMusic Mode)  https://github.com/qier222/YesPlayMusic  
+     从 YesPlayMusic 暴露在本地的端口获取当前播放歌曲的歌词。  
+     
+     > Fetches lyrics of the currently playing music from the local port exposed by YesPlayMusic. 
+     
+     
+     
+  2. LX Music 模式 (LX Music Mode)  **[lx-music-desktop](https://github.com/lyswhut/lx-music-desktop)**  
+       从 LX Music 暴露在本地的端口获取当前播放歌曲的歌词  
+    
+     > Fetches lyrics of the currently playing music from the local port exposed by LX Music. 
+     
+     
+     
+  3. 全局模式 (Global Mode) 
+     从 [**LrcLib**](https://lrclib.net/) 歌词数据库中根据 **`歌手`、`曲名`、`专辑名`** 精确匹配歌词。若无匹配结果，则使用 **歌名** 模糊查询。  
+  
+     > Fetches lyrics from the [Lrclib](https://lrclib.net/) lyrics database by precisely matching the `artist`, `music(track) title`, and `album name`. If no result is found, then fallback to a fuzzy search using only the **song title**. 
+
+
+
+
+---
+
+
+
+### 安装指南 (Installation Guide)
+
+有两种方式可选：  
+> As for installing the widget, you will have 2 approaches:  
+
+
+
+1. 推荐使用 KDE 官网提供的图形界面方式，详见[此链接](https://userbase.kde.org/Plasma/Installing_Plasmoids)。  
+
+   > Use the GUI operation recommended by the KDE official website at [this link](https://userbase.kde.org/Plasma/Installing_Plasmoids).  
 
    
 
-## 2. Screenshots
+2. 使用以下命令测试并安装
 
-### 2.1 Fullscreen Shortcuts
+   > Use the below command to test and install
 
-* Under Plasma6 (With Panel Colorizer).
+   ```
+   yay -S plasmoidviewer
+   git clone git@github.com:KangweiZhu/lyrics-on-panel.git
+   cd lyrics-on-panel
+   kpackagetool6 -t Plasma/Applet -i .
+   ```
 
-> "Most likely will be able to display the lyric that that Spotify does not show."
 
-![image-20240529024104188](img/image-20240529024104188.png)
 
-* Under Plasma5
 
-![image-20240317192855544](img/image-20240317192855544.png "Fullscreen shortcut")
 
----
+### 展示（Showcase）  
 
-### 2.2 Panel Only
+#### KDE Plasma6（配合 [**Panel Coloizer**](https://github.com/luisbocanegra/plasma-panel-colorizer)）
+> Under KDE Plasma 6 (With [**Panel Coloizer**](https://github.com/luisbocanegra/plasma-panel-colorizer)).
 
-![image-20240317192935566](img/image-20240317192935566.png "Panel shortcut")
 
-![image-20240529023754367](img/image-20240529023754367.png)
-
-![image-20240529023819659](img/image-20240529023819659.png)
-
----
-
-### 2.3 Synchronized lyrics 
-
-![image-20240317192959997](img/image-20240317192959997.png "synchronized lyrics")
+![Plasma6 展示](img/image-20240529024104188.png)
 
 ---
 
-### 2.4 Freedom of Customizing every component of this widget
 
-![image-20240529023657784](img/image-20240529023657784.png)
+
+#### KDE Plasma 5
+
+> Under KDE Plasma 5  
+
+![Plasma5 展示](img/image-20240317192855544.png "Fullscreen shortcut")
 
 ---
+
+
+
+#### 仅在面板中显示（Panel Only）  
+
+> Display only on Panel Only  
+
+![Panel 展示1](img/image-20240529023754367.png)  
+![Panel 展示2](img/image-20240529023819659.png)
+
+---
+
+
+
+#### 同步歌词显示（Synchronized Lyrics）  
+
+> Synchronized lyrics  
+
+![image-20250525014042601](img/README/image-20250525014042601.png)
+
+---
+
+
+
+#### 配置页面  (Configuration Page)
+
+> Freedom of customizing every component of this widget  
+
+<p align="center">
+  <img src="img/README/image-20250525013647423.png" alt="Customizing Components">
+</p>

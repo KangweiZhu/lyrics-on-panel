@@ -47,7 +47,7 @@ Kirigami.FormLayout {
 
     QQC2.RadioButton {
         id: compatibleModeRadioButton
-        text: i18n("Global (currently broken)")
+        text: i18n("Global Mode")
     }
 
     QQC2.SpinBox {
