@@ -123,6 +123,8 @@ Kirigami.FormLayout {
         id: lxMusicPortTextField
         Kirigami.FormData.label: i18n("LX Music Local Port: ")
         enabled: lxMusicPropriataryRadioButton.checked
+    }
+
     QQC2.SpinBox {
         id: lineBreakThresholdSpinBox
         Kirigami.FormData.label: i18n("Line Break Threshold: ")
