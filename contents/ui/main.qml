@@ -351,9 +351,9 @@ PlasmoidItem {
                             var currentLWT = lyricsWTimes.get(currentLyricIndex);
                             var currentLyric = currentLWT.lyric;
                             if (!currentLWT || !currentLyric || currentLyric === "" && prevNonEmptyLyric != "") {
-                                lyricText.text = prevNonEmptyLyric;
+                                lyricText.text = addLineBreak(prevNonEmptyLyric);
                             } else {
-                                lyricText.text = currentLyric;
+                                lyricText.text = addLineBreak(currentLyric);
                                 prevNonEmptyLyric = currentLyric;
                             }
                             break;
@@ -727,22 +727,6 @@ PlasmoidItem {
         return false;
     }
 
-    function reset() {
-        //console.log("entered")
-        compatibleModeTimer.stop();
-        yesPlayMusicTimer.stop();
-        ypmUserInfoTimer.stop();
-        previousMediaTitle = "";
-        previousMediaArtists = "";
-        lyricsWTimes.clear();
-        prevNonEmptyLyric = "";
-        previousLrcId = "";
-        queryFailed = false;
-        lyricText.text = " ";
-        isCompatibleLRCFound = false;
-        isYPMLyricFound = false;
-    }
-
     function getUserDetail() {
         var xhr = new XMLHttpRequest();
         xhr.open("GET", ypm_base_url + "/api/user/detail?uid=" + neteaseID);
@@ -761,32 +745,6 @@ PlasmoidItem {
         xhr.send();
     }
 
-    Timer {
-        id: lyricDisplayTimer
-        interval: 1
-        running: false
-        repeat: true
-        onTriggered: { 
-            if (currentMediaTitle === "Advertisement") { // Aim to solve Spotify non-premium bug report
-                lyricText.text = currentMediaTitle;
-            } else {
-                for (let i = 0; i < lyricsWTimes.count; i++) {
-                    if (lyricsWTimes.get(i).time >= mprisCurrentPlayingSongTimeMS) {
-                        currentLyricIndex = i > 0 ? i - 1 : 0;
-                        var currentLWT = lyricsWTimes.get(currentLyricIndex);
-                        var currentLyric = currentLWT.lyric;
-                        if (!currentLWT || !currentLyric || currentLyric === "" && prevNonEmptyLyric != "") {
-                            lyricText.text = addLineBreak(prevNonEmptyLyric);
-                        } else {
-                            lyricText.text = addLineBreak(currentLyric);
-                            prevNonEmptyLyric = currentLyric;
-                        }
-                        break;
-                    }
-                }
-            }
-        }
-    }
 
     function lxHandler() {
         if (currentMediaArtists === "" && currentMediaTitle === "") {
