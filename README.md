@@ -68,6 +68,7 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
     * Youtube Music
     * Netease Cloud Music (Not wine version)
     * Apple Music
+    * SPlayer
 
 ​    
 
@@ -101,7 +102,20 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
      
      
      
-  3. 全局模式 (Global Mode) 
+  3. SPlayer 模式 (SPlayer Mode)  **[SPlayer](https://github.com/imsyy/SPlayer)**  
+       从 SPlayer 暴露在本地的端口获取当前播放歌曲的歌词  
+       仅2026.1.4以后构建的版本可用[3eda65d](https://github.com/imsyy/SPlayer/commit/3eda65dd89fdebade373f20b5890add6ac3ab3df)
+    
+     > Fetches lyrics of the currently playing music from the local port exposed by SPlayer.
+     > Only builds from version 2026.1.4 onwards are available.[3eda65d](https://github.com/imsyy/SPlayer/commit/3eda65dd89fdebade373f20b5890add6ac3ab3df)
+     
+     ​    
+     
+     
+     
+     
+     
+  4. 全局模式 (Global Mode) 
      从 [**LrcLib**](https://lrclib.net/) 歌词数据库中根据 **`歌手`、`曲名`、`专辑名`** 精确匹配歌词。若无匹配结果，则使用 **歌名** 模糊查询。  
   
      > Fetches lyrics from the [Lrclib](https://lrclib.net/) lyrics database by precisely matching the `artist`, `music(track) title`, and `album name`. If no result is found, then fallback to a fuzzy search using only the **song title**. 
