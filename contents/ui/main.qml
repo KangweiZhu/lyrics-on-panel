@@ -142,7 +142,15 @@ PlasmoidItem {
 
         Image {
             id: mediaPlayerIcon
-            source: config_yesPlayMusicChecked ? cloudMusicIcon : spotifyIcon
+            source: {
+                if (config_yesPlayMusicChecked) {
+                    return cloudMusicIcon;
+                } else if (config_splayerChecked) {
+                    return splayerIcon;
+                } else {
+                    return spotifyIcon;
+                }
+            }
             sourceSize.width: config_mediaControllItemSize
             sourceSize.height: config_mediaControllItemSize
             anchors.left: parent.left
@@ -174,6 +182,7 @@ PlasmoidItem {
     property string forwardIcon: config_whiteMediaControlIconsChecked ? "../assets/media-forward-white.svg" : "../assets/media-forward.svg"
     property string likeIcon: config_whiteMediaControlIconsChecked ? "../assets/media-like-white.svg" : "../assets/media-like.svg"
     property string likedIcon: "../assets/media-liked.svg"
+    property string splayerIcon: "../assets/splayer.svg"
     property string cloudMusicIcon: config_whiteMediaControlIconsChecked ? "../assets/netease-cloud-music-white.svg" : "../assets/netease-cloud-music.svg"
     property string spotifyIcon: config_whiteMediaControlIconsChecked ? "../assets/spotify-white.svg" : "../assets/spotify.svg"
     property string playIcon: config_whiteMediaControlIconsChecked ? "../assets/media-play-white.svg" : "../assets/media-play.svg"
@@ -182,6 +191,7 @@ PlasmoidItem {
     // Applet UI behavior configuration
     property bool config_yesPlayMusicChecked: Plasmoid.configuration.yesPlayMusicChecked;
     property bool config_lxMusicChecked: Plasmoid.configuration.lxMusicChecked;
+    property bool config_splayerChecked: Plasmoid.configuration.splayerChecked;
     property bool config_spotifyChecked: Plasmoid.configuration.spotifyChecked;
     property bool config_compatibleModeChecked: Plasmoid.configuration.compatibleModeChecked;
 
@@ -261,6 +271,11 @@ PlasmoidItem {
                     if (mpris2CurrentPlayerIdentity === "lx-music-desktop") {
                         lxMusicTimer.start();
                     }
+                } else if (currExpectedPlayerIdentity === "SPlayer") {
+                    if (mpris2CurrentPlayerIdentity === "SPlayer") {
+                        console.log("Starting SPlayer Timer");
+                        splayerTimer.start();
+                    }
                 }
             }
         }
@@ -287,6 +302,16 @@ PlasmoidItem {
         repeat: true 
         onTriggered: {
             lxHandler();
+        }
+    }
+
+    Timer {
+        id: splayerTimer
+        interval: 200
+        running: false
+        repeat: true
+        onTriggered: {
+            splayerHandler();
         }
     }
     
@@ -318,6 +343,9 @@ PlasmoidItem {
                 } else if (mpris2CurrentPlayerIdentity === "lx-music-desktop") {
                     // console.log("lx music triggered")
                     lxHandler();
+                } else if (mpris2CurrentPlayerIdentity === "SPlayer") {
+                    // console.log("splayer triggered")
+                    splayerHandler();
                 } else {
                     if (!isCompatibleLRCFound || needFallback) {
                         //console.log("spotify compatible mode triggered")
@@ -365,12 +393,17 @@ PlasmoidItem {
     readonly property string lxmusic_base_url: {
         return "http://localhost:" + config_lxMusicPort;
     }
+
+    readonly property string splayer_base_url: "http://localhost:25884"
+
     readonly property string lrclib_base_url: "https://lrclib.net"
 
     // Successfully fetched the lyrics from the yesplaymusic API?
     property bool isYPMLyricFound: false;
 
     property bool isLXLyricFound: false;
+
+    property bool isSPlayerLyricFound: false;
 
     // Current Media Title (Song's name), default is empty string
     property string currentMediaTitle: mpris2Model.currentPlayer?.track ?? ""
@@ -419,6 +452,8 @@ PlasmoidItem {
     // YesPlayMusic only, don't get misleaded. We can use http://localhost:27232/api/currentMediaYPMId to get lyrics of the current playing song, then upload it to lrclib
     property string currentMediaYPMId: ""
 
+    property string currentMediaSPId: ""
+
     // Just the index of the LyricWTimes lists. Retrieve the element from the list using the index. The retrieved element contains a timestamp and the corresponding lyric.
     property int currentLyricIndex: 0
 
@@ -447,6 +482,8 @@ PlasmoidItem {
             return "Spotify";
         } else if (config_lxMusicChecked) {
             return "lx-music-desktop";
+        } else if (config_splayerChecked) {
+            return "SPlayer";
         } else {
             return "compatible";
         }
@@ -554,6 +591,41 @@ PlasmoidItem {
         };
         xhr.send();
     }
+
+    function fetchMediaIdSP() {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", splayer_base_url + "/api/control/song-info");
+        console.log("Fetching SPlayer Media ID");
+        xhr.onreadystatechange = function() {
+            if (xhr.status === 200) {
+                var response = JSON.parse(xhr.responseText);
+                if (response && response.data.id) {
+                    currentMediaSPId = response.data.id;
+                    fetchSyncLyricSP();
+                }
+            }
+        };
+        xhr.send();
+    }
+    function fetchSyncLyricSP() {
+        var xhr = new XMLHttpRequest();   
+        xhr.open("GET", splayer_base_url + "/api/netease/lyric?id=" + currentMediaSPId);  
+        xhr.onreadystatechange = function() {
+            if (xhr.status === 200) {
+                var response = JSON.parse(xhr.responseText);
+                if (response && response.lrc && response.lrc.lyric) {
+                    lyricsWTimes.clear();
+                    isSPlayerLyricFound = true;
+                    parseLyric(response.lrc.lyric);
+                } else if (!response.lrc || !response.lrc.lyric) {
+                    lyricsWTimes.clear();
+                    lyricText.text = lrc_not_exists;
+                }
+            }
+        };
+        xhr.send();
+    }
+
 
     // todo: contribute an lrc file to the lrclib API
     function parseAndUpload(ypmLrc) {
@@ -727,6 +799,17 @@ PlasmoidItem {
         }
     }
 
+    function splayerHandler() {
+        if (currentMediaArtists === "" && currentMediaTitle === "") {
+            lyricText.text = " ";
+            lyricsWTimes.clear();
+        } else {
+            if (!isSPlayerLyricFound) {
+                fetchMediaIdSP();
+            }
+        }
+    }
+
     /**
         1. Stop the compatible mode timer and yesplaymusic timer.
         2. Set the previous media title and artists to the current media title and artists.
@@ -743,6 +826,7 @@ PlasmoidItem {
         compatibleModeTimer.stop();
         yesPlayMusicTimer.stop();
         lxMusicTimer.stop();
+        splayerTimer.stop();
         previousMediaTitle = currentMediaTitle;
         previousMediaArtists = currentMediaArtists;
         mpris2PreviousPlayerIdentity = mpris2CurrentPlayerIdentity;
@@ -755,6 +839,7 @@ PlasmoidItem {
         isCompatibleLRCFound = false;
         isYPMLyricFound = false;
         isLXLyricFound = false;
+        isSPlayerLyricFound = false;
     }
 
     /**
