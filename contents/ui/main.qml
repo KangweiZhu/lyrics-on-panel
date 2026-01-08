@@ -594,13 +594,15 @@ PlasmoidItem {
     function fetchMediaIdSP() {
         var xhr = new XMLHttpRequest();
         xhr.open("GET", splayer_base_url + "/api/control/song-info");
-        console.log("Fetching SPlayer Media ID");
         xhr.onreadystatechange = function() {
-            if (xhr.status === 200) {
+            if (xhr.status === 200 && xhr.readyState === XMLHttpRequest.DONE) {
                 var response = JSON.parse(xhr.responseText);
-                if (response && response.data.id) {
+                if (response && response.data.id && response.data.lrcData.length > 0) {
                     currentMediaSPId = response.data.id;
                     fetchSyncLyricSP();
+                } else {
+                    lyricsWTimes.clear();
+                    lyricText.text = lrc_not_exists;
                 }
             }
         };
@@ -610,7 +612,7 @@ PlasmoidItem {
         var xhr = new XMLHttpRequest();   
         xhr.open("GET", splayer_base_url + "/api/netease/lyric?id=" + currentMediaSPId);  
         xhr.onreadystatechange = function() {
-            if (xhr.status === 200) {
+            if (xhr.status === 200 && xhr.readyState === XMLHttpRequest.DONE) {
                 var response = JSON.parse(xhr.responseText);
                 if (response && response.lrc && response.lrc.lyric) {
                     lyricsWTimes.clear();
