@@ -11,7 +11,8 @@ Kirigami.FormLayout {
 
     property alias cfg_yesPlayMusicChecked: yesPlayMusicPropriataryRadioButton.checked 
     property alias cfg_spotifyChecked: spotifyPropriataryRadioButton.checked  
-    property alias cfg_lxMusicChecked: lxMusicPropriataryRadioButton.checked   
+    property alias cfg_lxMusicChecked: lxMusicPropriataryRadioButton.checked  
+    property alias cfg_splayerChecked: splayerPropriataryRadioButton.checked 
     property alias cfg_compatibleModeChecked: compatibleModeRadioButton.checked
 
     property alias cfg_lyricTextSize: lyricTextSizeSpinBox.value 
@@ -43,6 +44,11 @@ Kirigami.FormLayout {
     QQC2.RadioButton {
         id: lxMusicPropriataryRadioButton
         text: i18n("LX Music")
+    }
+
+    QQC2.RadioButton {
+        id: splayerPropriataryRadioButton
+        text: i18n("SPlayer")
     }
 
     QQC2.RadioButton {

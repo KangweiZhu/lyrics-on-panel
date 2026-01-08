@@ -9,6 +9,9 @@
         <entry name="lxMusicChecked" type="Bool">
             <default>false</default>
         </entry>
+        <entry name="splayerChecked" type="Bool">
+            <default>false</default>
+        </entry>
         <entry name="spotifyChecked" type="Bool">
             <default>false</default>
         </entry>
