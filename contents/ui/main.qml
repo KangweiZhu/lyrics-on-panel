@@ -273,7 +273,6 @@ PlasmoidItem {
                     }
                 } else if (currExpectedPlayerIdentity === "SPlayer") {
                     if (mpris2CurrentPlayerIdentity === "SPlayer") {
-                        console.log("Starting SPlayer Timer");
                         splayerTimer.start();
                     }
                 }
