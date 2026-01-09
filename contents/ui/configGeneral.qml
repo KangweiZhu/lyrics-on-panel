@@ -26,6 +26,8 @@ Kirigami.FormLayout {
     property alias cfg_mediaControllItemVerticalOffset: mediaControllItemVerticalOffsetSpinBox.value
     property alias cfg_whiteMediaControlIconsChecked: whiteMediaControlIconsChecked.checked
 
+    property alias cfg_dynamicWidgetWidthChecked: dynamicWidgetWidthChecked.checked
+    property alias cfg_smoothWidgetWidthChangeChecked: smoothWidgetWidthChangeChecked.checked
     property alias cfg_preferedWidgetWidth: preferedWidgetWidthTextField.text
     property alias cfg_hideItemWhenNoControlChecked: hideItemWhenNoControlChecked.checked
     property alias cfg_lxMusicPort: lxMusicPortTextField.text
@@ -113,9 +115,22 @@ Kirigami.FormLayout {
         checkable: true
     }
 
+    QQC2.CheckBox {
+        id: dynamicWidgetWidthChecked
+        Kirigami.FormData.label: i18n("Use Dynamic Widget Width")
+        checkable: true
+    }
+
+    QQC2.CheckBox {
+        id: smoothWidgetWidthChangeChecked
+        Kirigami.FormData.label: i18n("Enable Smooth Widget Width Change")
+        enabled: dynamicWidgetWidthChecked.checked
+    }
+
     QQC2.TextField {
         id: preferedWidgetWidthTextField
         Kirigami.FormData.label: i18n("Prefered Widget Width: ")
+        enabled: !dynamicWidgetWidthChecked.checked
     }
 
     QQC2.CheckBox {

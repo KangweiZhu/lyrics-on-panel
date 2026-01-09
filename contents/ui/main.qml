@@ -205,7 +205,9 @@ PlasmoidItem {
     property int config_mediaControllItemSize: Plasmoid.configuration.mediaControllItemSize
     property int config_mediaControllItemVerticalOffset: Plasmoid.configuration.mediaControllItemVerticalOffset;
 
-    property int config_whiteMediaControlIconsChecked: Plasmoid.configuration.whiteMediaControlIconsChecked;
+    property bool config_whiteMediaControlIconsChecked: Plasmoid.configuration.whiteMediaControlIconsChecked;
+    property bool config_dynamicWidgetWidthChecked: Plasmoid.configuration.dynamicWidgetWidthChecked;
+    property bool config_smoothWidgetWidthChangeChecked: Plasmoid.configuration.smoothWidgetWidthChangeChecked;
     property int config_preferedWidgetWidth: Plasmoid.configuration.preferedWidgetWidth;
     property bool config_hideItemWhenNoControlChecked: Plasmoid.configuration.hideItemWhenNoControlChecked;
 
@@ -275,6 +277,23 @@ PlasmoidItem {
                     if (mpris2CurrentPlayerIdentity === "SPlayer") {
                         splayerTimer.start();
                     }
+                }
+            }
+
+            if (config_dynamicWidgetWidthChecked) {
+                var finalWidgetWidth = parseInt(lyricText.anchors.rightMargin + config_mediaControllItemSize);
+                finalWidgetWidth += parseInt(lyricText.contentWidth);
+                if (config_preferedWidgetWidth === finalWidgetWidth) {
+                    return;
+                }
+                if (config_smoothWidgetWidthChangeChecked) {
+                    config_preferedWidgetWidth = smoothWidthChange(finalWidgetWidth);
+                } else {
+                    config_preferedWidgetWidth = finalWidgetWidth;
+                }
+            } else {
+                if (config_preferedWidgetWidth != Plasmoid.configuration.preferedWidgetWidth) {
+                    config_preferedWidgetWidth = Plasmoid.configuration.preferedWidgetWidth;
                 }
             }
         }
@@ -809,6 +828,11 @@ PlasmoidItem {
                 fetchMediaIdSP();
             }
         }
+    }
+
+    function smoothWidthChange(finalWidth) {
+        return config_preferedWidgetWidth < finalWidth ?
+         config_preferedWidgetWidth + 1 : config_preferedWidgetWidth - 1;
     }
 
     /**
