@@ -76,9 +76,9 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
 
 
 
-* 根据歌曲信息，采用三套逻辑进行歌词抓取：  
+* 根据歌曲信息，采用四套逻辑进行歌词抓取：  
 
-  > This plugin uses three approaches to fetch lyrics:
+  > This plugin uses four approaches to fetch lyrics:
 
   1. YesPlayMusic模式 (YesPlayMusic Mode)  https://github.com/qier222/YesPlayMusic  
      从 YesPlayMusic 暴露在本地的端口获取当前播放歌曲的歌词。  

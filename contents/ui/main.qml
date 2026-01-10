@@ -470,8 +470,6 @@ PlasmoidItem {
     // YesPlayMusic only, don't get misleaded. We can use http://localhost:27232/api/currentMediaYPMId to get lyrics of the current playing song, then upload it to lrclib
     property string currentMediaYPMId: ""
 
-    property string currentMediaSPId: ""
-
     // Just the index of the LyricWTimes lists. Retrieve the element from the list using the index. The retrieved element contains a timestamp and the corresponding lyric.
     property int currentLyricIndex: 0
 
@@ -616,9 +614,8 @@ PlasmoidItem {
         xhr.onreadystatechange = function() {
             if (xhr.status === 200 && xhr.readyState === XMLHttpRequest.DONE) {
                 var response = JSON.parse(xhr.responseText);
-                if (response && response.data.id && response.data.lrcData.length > 0) {
-                    currentMediaSPId = response.data.id;
-                    fetchSyncLyricSP();
+                if (response && response.data.id) {
+                    parseSyncLyricSP(response.data.lrcData);
                 } else {
                     lyricsWTimes.clear();
                     lyricText.text = lrc_not_exists;
@@ -627,25 +624,35 @@ PlasmoidItem {
         };
         xhr.send();
     }
-    function fetchSyncLyricSP() {
-        var xhr = new XMLHttpRequest();   
-        xhr.open("GET", splayer_base_url + "/api/netease/lyric?id=" + currentMediaSPId);  
-        xhr.onreadystatechange = function() {
-            if (xhr.status === 200 && xhr.readyState === XMLHttpRequest.DONE) {
-                var response = JSON.parse(xhr.responseText);
-                if (response && response.lrc && response.lrc.lyric) {
-                    lyricsWTimes.clear();
-                    isSPlayerLyricFound = true;
-                    parseLyric(response.lrc.lyric);
-                } else if (!response.lrc || !response.lrc.lyric) {
-                    lyricsWTimes.clear();
-                    lyricText.text = lrc_not_exists;
-                }
-            }
-        };
-        xhr.send();
-    }
 
+    function parseSyncLyricSP(lyricsOriginList) {
+        var finalLyrics = new Array();
+        for (var i = 0; i < lyricsOriginList.length; i++) {
+            for (var j = 0; j < lyricsOriginList[i].words.length; j++) {
+                var lyric = "[mm:ss]{lyric}"
+                var currentTime = lyricsOriginList[i].words[j].startTime;
+                var currentLyric =  lyricsOriginList[i].words[j].word;
+                if (currentLyric.trim() === "") {
+                    continue;
+                }
+                var currentMM = currentTime/1000/60;
+                var currentSS = (currentTime/1000) % 60;
+                finalLyrics.push(lyric
+                    .replace("mm", parseInt(currentMM))
+                    .replace("ss", currentSS.toFixed(3))
+                    .replace("{lyric}", currentLyric)
+                );
+            }
+        }
+        if (finalLyrics.length > 0) {
+            lyricsWTimes.clear();
+            isSPlayerLyricFound = true;
+            parseLyric(finalLyrics.join("\n"));
+        } else {
+            lyricsWTimes.clear();
+            lyricText.text = lrc_not_exists;
+        }
+    }
 
     // todo: contribute an lrc file to the lrclib API
     function parseAndUpload(ypmLrc) {
