@@ -611,13 +611,15 @@ PlasmoidItem {
         xhr.send();
     }
 
-    function fetchMediaIdSP() {
+    function fetchMediaInfoSP() {
         var xhr = new XMLHttpRequest();
         xhr.open("GET", splayer_base_url + "/api/control/song-info");
         xhr.onreadystatechange = function() {
             if (xhr.status === 200 && xhr.readyState === XMLHttpRequest.DONE) {
                 var response = JSON.parse(xhr.responseText);
-                if (response && response.data.id) {
+                // Wait postion > 1000, may ensure lyric data is ready
+                // 这玩意也随机, 完全看加载速度, 至少目前是这样
+                if (response && response.data && response.data.currentTime > 1000) {
                     parseSyncLyricSP(response.data.lrcData);
                 } else {
                     lyricsWTimes.clear();
@@ -649,12 +651,12 @@ PlasmoidItem {
         }
         if (finalLyrics.length > 0) {
             lyricsWTimes.clear();
-            isSPlayerLyricFound = true;
             parseLyric(finalLyrics.join("\n"));
         } else {
             lyricsWTimes.clear();
             lyricText.text = lrc_not_exists;
         }
+        isSPlayerLyricFound = true;
     }
 
     // todo: contribute an lrc file to the lrclib API
@@ -839,7 +841,7 @@ PlasmoidItem {
             lyricsWTimes.clear();
         } else {
             if (!isSPlayerLyricFound) {
-                fetchMediaIdSP();
+                fetchMediaInfoSP();
             }
         }
     }
