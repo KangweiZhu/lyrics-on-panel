@@ -426,6 +426,10 @@ PlasmoidItem {
     // Retrieve the current media position (in microseconds)
     property int position: mpris2Model.currentPlayer?.position ?? 0
 
+
+    // Retrieve the current media length (in microseconds)
+    property double length: mpris2Model.currentPlayer?.length ?? 0
+
     /**
         A list of dictionaries. Each dictionary contains a timestamp and the corresponding lyric. Below is an example
 
@@ -665,6 +669,11 @@ PlasmoidItem {
                 lyricsWTimes.append({time: timestamp, lyric: lyricPerRow});
             }
         }
+        /** 
+            Add an empty lyric at the end to avoid can't reach last correct lyric forever.
+            This empty lyric like {song's length, ""}
+        */
+        lyricsWTimes.append({time: length, lyric: ""});
         lyricDisplayTimer.start()
     }
 
