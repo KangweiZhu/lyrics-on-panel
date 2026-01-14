@@ -13,23 +13,7 @@
 </code></b></p>
 <p align="center"><b><code>Display lyrics of the currently playing music anywhere on the screen</code></b></p>
 
-
-
-### 目前版本
-
-当前仓库版本仅在 **KDE Plasma 6** 下工作。 如需要 **KDE Plasma5** 版本，请在 [**KDE Store**](https://store.kde.org/p/2138263) 或 [**Plasma5 分支**](https://github.com/KangweiZhu/lyrics-on-panel/tree/plasma5) 进行下载。
-
-> The current repository version only supports **KDE Plasma 6**. If you need the **KDE Plasma5** version, please download it from the [**KDE Store**](https://store.kde.org/p/2138263) or the [**Plasma5 branch**](https://github.com/KangweiZhu/lyrics-on-panel/tree/plasma5).  
-
-  
-
-  
-
-Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能， 以及Bug修复都尚未应用在Plasma5版本。
-
-> Plasma5 version is **usable but outdated**. Many features and bug fixes introduced in the new version are not applied to the Plasma5 version.
-
----  
+----
 
 ### 功能介绍  (Features)
 
@@ -37,24 +21,11 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
 
 > This plugin perfectly replicates the top-bar lyrics display feature of NetEase Cloud Music on macOS.  
 
-​    
-
-
-
-
-
 👉 原始效果参考：[CSDN 博文链接](https://blog.csdn.net/weixin_34061200/article/details/112693092)  
 
 > 👉 For the original effect reference, see: [CSDN Blog Link](https://blog.csdn.net/weixin_34061200/article/details/112693092)   
 
-  
-
-  
-
-
-
----
-
+----
 
 ### 工作原理  (How it works)
 
@@ -64,17 +35,12 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
 
   * 目前已知支持(Currently tested with)：
     * Spotify
-    * LX Music 
+    * LX Music
+    * SPlayer
     * Youtube Music
     * Netease Cloud Music (Not wine version)
     * Apple Music
     * SPlayer
-
-​    
-
-
-
-
 
 * 根据歌曲信息，采用三套逻辑进行歌词抓取：  
 
@@ -82,76 +48,90 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
 
   1. YesPlayMusic模式 (YesPlayMusic Mode)  https://github.com/qier222/YesPlayMusic  
      从 YesPlayMusic 暴露在本地的端口获取当前播放歌曲的歌词。  
-     
+
      > Fetches lyrics of the currently playing music from the local port exposed by YesPlayMusic. 
-     
-        
-     
-      
-     
-     
-     
-  2. LX Music 模式 (LX Music Mode)  **[lx-music-desktop](https://github.com/lyswhut/lx-music-desktop)**  
-       从 LX Music 暴露在本地的端口获取当前播放歌曲的歌词  
-    
-     > Fetches lyrics of the currently playing music from the local port exposed by LX Music. 
-     
-     ​    
-     
-     
-     
-     
-     
-  3. SPlayer 模式 (SPlayer Mode)  **[SPlayer](https://github.com/imsyy/SPlayer)**  
-       从 SPlayer 暴露在本地的端口获取当前播放歌曲的歌词  
+
+  2. LX Music 模式 (LX Music Mode)  **[lx-music-desktop](https://github.com/lyswhut/lx-music-desktop)**
+       从 LX Music 暴露在本地的端口获取当前播放歌曲的歌词
+
+     > Fetches lyrics of the currently playing music from the local port exposed by LX Music.
+
+  3. SPlayer 模式 (SPlayer Mode)  **[SPlayer](https://github.com/imsyy/SPlayer)**
+       从 SPlayer 暴露在本地的端口获取当前播放歌曲的歌词
        仅2026.1.4以后构建的版本可用[3eda65d](https://github.com/imsyy/SPlayer/commit/3eda65dd89fdebade373f20b5890add6ac3ab3df)
-    
+
      > Fetches lyrics of the currently playing music from the local port exposed by SPlayer.
      > Only builds from version 2026.1.4 onwards are available.[3eda65d](https://github.com/imsyy/SPlayer/commit/3eda65dd89fdebade373f20b5890add6ac3ab3df)
-     
-     ​    
-     
-     
-     
-     
-     
-  4. 全局模式 (Global Mode) 
+
+  4. 全局模式 (Global Mode)
      从 [**LrcLib**](https://lrclib.net/) 歌词数据库中根据 **`歌手`、`曲名`、`专辑名`** 精确匹配歌词。若无匹配结果，则使用 **歌名** 模糊查询。  
   
      > Fetches lyrics from the [Lrclib](https://lrclib.net/) lyrics database by precisely matching the `artist`, `music(track) title`, and `album name`. If no result is found, then fallback to a fuzzy search using only the **song title**. 
 
-​    
-
----
-
+----
 
 ### 安装指南 (Installation Guide)
 
-有两种方式可选：  
-> As for installing the widget, you will have 2 approaches:  
+#### KDE
+
+> 针对KDE Plasma， 我们提供两套版本，分别是纯QML实现以及前端QML后端Python。具体请见v1.4和v2.0的ChangeLog。
+
+>> For KDE Plasma, we provide two versions: a pure QML implementation and a QML frontend with Python backend. Please refer to the ChangeLog for v1.4 and v2.0 for details.
+
+当前仓库版本仅保证在 **KDE Plasma 6** 下工作。 如需要 **KDE Plasma5** 版本，请在 [**KDE Store**](https://store.kde.org/p/2138263) 或 [**Plasma5 分支**](https://github.com/KangweiZhu/lyrics-on-panel/tree/plasma5) 进行下载。
+
+> The current repository version only supports **KDE Plasma 6**. If you need the **KDE Plasma5** version, please download it from the [**KDE Store**](https://store.kde.org/p/2138263) or the [**Plasma5 branch**](https://github.com/KangweiZhu/lyrics-on-panel/tree/plasma5).  
+
+Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能， 以及Bug修复都尚未应用在Plasma5版本。
+
+> Plasma5 version is **usable but outdated**. Many features and bug fixes introduced in the new version are not applied to the Plasma5 version.
 
 
-1. 推荐使用 KDE 官网提供的图形界面方式，详见[此链接](https://userbase.kde.org/Plasma/Installing_Plasmoids)。  
 
-   > Use the GUI operation recommended by the KDE official website at [this link](https://userbase.kde.org/Plasma/Installing_Plasmoids).  
+有**两种安装方式**可选：  
 
-   ​    
+> As for **installing the widget,** you will have 2 approaches:  
 
+1. 无论是v1（**纯QML实现， 传统模式**）还是v2（**更灵活与精确的模式**）, 都推荐使用 KDE 官方提供的图形界面方式安装**前端**，详见[此链接](https://userbase.kde.org/Plasma/Installing_Plasmoids)。  ****
+
+   > Regardless of whether you are using v1 (**pure QML implementation, legacy mode**) or v2 (**a more flexible and precise mode**), it is recommended to install the **frontend** using the GUI method provided by the KDE official website  (see [this link](https://userbase.kde.org/Plasma/Installing_Plasmoids)). 
+   
    
 
-2. 使用以下命令测试并安装
 
-   > Use the below command to test and install
+2. 也可以通过命令行完成**v1/v2**前端的安装
 
-   ```
-   yay -S plasmoidviewer
+   > you can use the following commands to test and install:
+
+   ```bash
+   yay -S plasma-sdk
    git clone git@github.com:KangweiZhu/lyrics-on-panel.git
-   cd lyrics-on-panel
+   cd lyrics-on-panel/kde/v2 # or cd lyrics-on-panel/kde/v1 if you want v1
    kpackagetool6 -t Plasma/Applet -i .
    ```
 
- 
----
+
+
+* ⚠️⚠️⚠️**v2需要额外的Python后端才能够工作。在 Arch Linux 下, 后端可以通过以下命令完成安装。**⚠️⚠️⚠️
+
+  > Note that v2 (**a more flexible and precise mode**) requires an additional Python backend to make the frontend work. **Rest assured, the backend can be installed on Arch Linux with the following commands.**
+
+  ```
+  git clone git@github.com:KangweiZhu/lyrics-on-panel.git
+  cd lyrics-on-panel
+  chmod +x scripts/install-backend.sh
+  ./scripts/install-backend.sh
+  ```
+
+
+
+#### DMS
+
+
+
+
+----
+
 ### 展示（Showcase）  
 
 #### KDE Plasma6（配合 [**Panel Coloizer**](https://github.com/luisbocanegra/plasma-panel-colorizer)）

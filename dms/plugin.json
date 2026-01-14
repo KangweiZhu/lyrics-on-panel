@@ -1,0 +1,13 @@
+{
+  "id": "lyrics-on-panel-dms",
+  "name": "[Frontend] lyrics-on-panel-dms",
+  "description": "A widget that can display the current playing music's synchronized lyrics line by line, on any where. Requires backend setup at https://github.com/KangweiZhu/lyrics-on-panel",
+  "version": "1.0.0",
+  "author": "Anicaa Zhu",
+  "icon": "widgets",
+  "type": "widget",
+  "component": "./contents/ui/main.qml",
+  "settings": "./contents/ui/configGeneral.qml",
+  "permissions": ["settings_read", "settings_write", "network"],
+  "repo": "https://github.com/KangweiZhu/lyrics-on-panel/dms"
+}

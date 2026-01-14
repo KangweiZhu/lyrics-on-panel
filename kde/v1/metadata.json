@@ -12,9 +12,9 @@
         "Id": "lyrics-on-panel-plasma6",
         "License": "GPLv3",
         "Name": "lyrics-on-panel-plasma6",
-        "KPackageStructure": "Plasma/Applet",
         "Version": "1.4",
-        "Website": "https://github.com/KangweiZhu/lyrics-on-panel/tree/plasma6"
+        "Website": "https://github.com/KangweiZhu/lyrics-on-panel/kde/v1"
     },
-    "X-Plasma-API-Minimum-Version": "6.0"
+    "X-Plasma-API-Minimum-Version": "6.0",
+    "KPackageStructure": "Plasma/Applet"
 }
