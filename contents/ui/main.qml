@@ -426,6 +426,10 @@ PlasmoidItem {
     // Retrieve the current media position (in microseconds)
     property int position: mpris2Model.currentPlayer?.position ?? 0
 
+
+    // Retrieve the current media length (in microseconds)
+    property double length: mpris2Model.currentPlayer?.length ?? 0
+
     /**
         A list of dictionaries. Each dictionary contains a timestamp and the corresponding lyric. Below is an example
 
@@ -591,15 +595,14 @@ PlasmoidItem {
         xhr.send();
     }
 
-    function fetchMediaIdSP() {
+    function fetchMediaInfoSP() {
         var xhr = new XMLHttpRequest();
         xhr.open("GET", splayer_base_url + "/api/control/song-info");
         xhr.onreadystatechange = function() {
             if (xhr.status === 200 && xhr.readyState === XMLHttpRequest.DONE) {
                 var response = JSON.parse(xhr.responseText);
-                if (response && response.data.id && response.data.lrcData.length > 0) {
-                    currentMediaSPId = response.data.id;
-                    fetchSyncLyricSP();
+                if (response && response.data && !response.data.lyricLoading) {
+                    parseSyncLyricSP(response.data.lrcData);
                 } else {
                     lyricsWTimes.clear();
                     lyricText.text = lrc_not_exists;
@@ -608,23 +611,31 @@ PlasmoidItem {
         };
         xhr.send();
     }
-    function fetchSyncLyricSP() {
-        var xhr = new XMLHttpRequest();   
-        xhr.open("GET", splayer_base_url + "/api/netease/lyric?id=" + currentMediaSPId);  
-        xhr.onreadystatechange = function() {
-            if (xhr.status === 200 && xhr.readyState === XMLHttpRequest.DONE) {
-                var response = JSON.parse(xhr.responseText);
-                if (response && response.lrc && response.lrc.lyric) {
-                    lyricsWTimes.clear();
-                    isSPlayerLyricFound = true;
-                    parseLyric(response.lrc.lyric);
-                } else if (!response.lrc || !response.lrc.lyric) {
-                    lyricsWTimes.clear();
-                    lyricText.text = lrc_not_exists;
-                }
+
+    function parseSyncLyricSP(lyricsOriginList) {
+        var finalLyrics = new Array();
+        for (var i = 0; i < lyricsOriginList.length; i++) {
+            for (var j = 0; j < lyricsOriginList[i].words.length; j++) {
+                var lyric = "[mm:ss]{lyric}"
+                var currentTime = lyricsOriginList[i].words[j].startTime;
+                var currentLyric =  lyricsOriginList[i].words[j].word;
+                var currentMM = currentTime/1000/60;
+                var currentSS = (currentTime/1000) % 60;
+                finalLyrics.push(lyric
+                    .replace("mm", parseInt(currentMM))
+                    .replace("ss", currentSS.toFixed(3))
+                    .replace("{lyric}", currentLyric)
+                );
             }
-        };
-        xhr.send();
+        }
+        if (finalLyrics.length > 0) {
+            lyricsWTimes.clear();
+            parseLyric(finalLyrics.join("\n"));
+        } else {
+            lyricsWTimes.clear();
+            lyricText.text = lrc_not_exists;
+        }
+        isSPlayerLyricFound = true;
     }
 
 
@@ -658,6 +669,11 @@ PlasmoidItem {
                 lyricsWTimes.append({time: timestamp, lyric: lyricPerRow});
             }
         }
+        /** 
+            Add an empty lyric at the end to avoid can't reach last correct lyric forever.
+            This empty lyric like {song's length, ""}
+        */
+        lyricsWTimes.append({time: length, lyric: ""});
         lyricDisplayTimer.start()
     }
 
@@ -806,7 +822,7 @@ PlasmoidItem {
             lyricsWTimes.clear();
         } else {
             if (!isSPlayerLyricFound) {
-                fetchMediaIdSP();
+                fetchMediaInfoSP();
             }
         }
     }
