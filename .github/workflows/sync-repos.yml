@@ -1,0 +1,42 @@
+name: Sync to separate repos
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - dir: dms
+            repo: KangweiZhu/lyrics-on-panel-dms
+          - dir: backend
+            repo: KangweiZhu/Universal-Mpris-LyricServer
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          path: source
+
+      - name: Checkout target
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ matrix.repo }}
+          token: ${{ secrets.LYP_REPO_TOKEN }}
+          path: target
+
+      - name: Sync files
+        run: |
+          rsync -av --delete --exclude '.git' source/${{ matrix.dir }}/ target/
+          cd target
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --quiet || git commit -m "Sync from lyrics-on-panel"
+          git push
