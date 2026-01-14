@@ -8,7 +8,7 @@ import qs.Modules.Plugins
 PluginComponent {
     id: root
 
-    layerNamespacePlugin: "lyrics-on-panel-dms"
+    layerNamespacePlugin: "lyricsOnPanel"
 
     // Icon paths
     property string backwardIcon: config_whiteMediaControlIconsChecked ? "../assets/media-backward-white.svg" : "../assets/media-backward.svg"
@@ -21,25 +21,25 @@ PluginComponent {
     property string playIcon: config_whiteMediaControlIconsChecked ? "../assets/media-play-white.svg" : "../assets/media-play.svg"
     property bool liked: false
 
-    // Config from pluginData (replaces Plasmoid.configuration)
-    property bool config_yesPlayMusicChecked: pluginData.yesPlayMusicChecked ?? true
-    property bool config_lxMusicChecked: pluginData.lxMusicChecked ?? false
-    property bool config_spotifyChecked: pluginData.spotifyChecked ?? false
-    property bool config_compatibleModeChecked: pluginData.compatibleModeChecked ?? false
+    // Config from pluginData (defaults match configGeneral.qml)
+    property bool config_yesPlayMusicChecked: pluginData.playerMode === "yesplaymusic"
+    property bool config_lxMusicChecked: pluginData.playerMode === "lxmusic"
+    property bool config_spotifyChecked: pluginData.playerMode === "spotify"
+    property bool config_compatibleModeChecked: pluginData.playerMode === "global"
 
-    property int config_lyricTextSize: pluginData.lyricTextSize ?? 14
+    property int config_lyricTextSize: pluginData.lyricTextSize ?? 12
     property string config_lyricTextColor: pluginData.lyricTextColor ?? "#ffffff"
     property bool config_lyricTextBold: pluginData.lyricTextBold ?? false
     property bool config_lyricTextItalic: pluginData.lyricTextItalic ?? false
-    property int config_lyricTextVerticalOffset: pluginData.lyricTextVerticalOffset ?? 0
+    property int config_lyricTextVerticalOffset: pluginData.lyricTextVerticalOffset ?? 1
 
     property int config_mediaControllSpacing: pluginData.mediaControllSpacing ?? 8
-    property int config_mediaControllItemSize: pluginData.mediaControllItemSize ?? 20
+    property int config_mediaControllItemSize: pluginData.mediaControllItemSize ?? 12
     property int config_mediaControllItemVerticalOffset: pluginData.mediaControllItemVerticalOffset ?? 0
 
     property bool config_whiteMediaControlIconsChecked: pluginData.whiteMediaControlIconsChecked ?? true
-    property int config_preferedWidgetWidth: pluginData.preferedWidgetWidth ?? 400
-    property bool config_hideItemWhenNoControlChecked: pluginData.hideItemWhenNoControlChecked ?? false
+    property int config_preferedWidgetWidth: pluginData.preferedWidgetWidth ?? 550
+    property bool config_hideItemWhenNoControlChecked: pluginData.hideItemWhenNoControlChecked ?? true
 
     property int config_lxMusicPort: pluginData.lxMusicPort ?? 23330
 

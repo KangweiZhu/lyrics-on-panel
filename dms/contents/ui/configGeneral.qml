@@ -5,7 +5,7 @@ import qs.Widgets
 
 PluginSettings {
     id: root
-    pluginId: "lyrics-on-panel-dms"
+    pluginId: "lyricsOnPanel"
 
     StyledText {
         width: parent.width
@@ -24,41 +24,17 @@ PluginSettings {
     }
 
     // Player Selection
-    StyledText {
-        width: parent.width
-        text: "Modes"
-        font.pixelSize: Theme.fontSizeMedium
-        font.weight: Font.Bold
-        color: Theme.surfaceText
-        topPadding: Theme.spacingM
-    }
-
-    ToggleSetting {
-        settingKey: "yesPlayMusicChecked"
-        label: "YesPlayMusic (YPM)"
-        description: "Use YesPlayMusic as default player"
-        defaultValue: false
-    }
-
-    ToggleSetting {
-        settingKey: "spotifyChecked"
-        label: "Spotify"
-        description: "Use Spotify as default player"
-        defaultValue: false
-    }
-
-    ToggleSetting {
-        settingKey: "lxMusicChecked"
-        label: "LX Music"
-        description: "Use LX Music as default player"
-        defaultValue: false
-    }
-
-    ToggleSetting {
-        settingKey: "compatibleModeChecked"
-        label: "Global Mode"
-        description: "Enable compatible mode for other players"
-        defaultValue: true
+    SelectionSetting {
+        settingKey: "playerMode"
+        label: "Player Mode"
+        description: "Select which player's lyric to show"
+        options: [
+            { label: "Global Mode", value: "global" },
+            { label: "YesPlayMusic", value: "yesplaymusic" },
+            { label: "Spotify", value: "spotify" },
+            { label: "LX Music", value: "lxmusic" }
+        ]
+        defaultValue: "global"
     }
 
     // Text Settings
