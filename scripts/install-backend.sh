@@ -40,6 +40,7 @@ echo -e "\n${YELLOW}[4/5] Creating Python environment...${NC}"
 mkdir -p "$INSTALL_DIR/backend"
 cd "$INSTALL_DIR/backend"
 
+uv self update
 uv venv --python 3.13.11
 uv pip install websockets==15.0.1 dbus-python==1.4.0
 
