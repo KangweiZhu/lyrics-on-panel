@@ -1,0 +1,49 @@
+name: Test Arch Linux Backend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'scripts/**'
+      - '.github/workflows/test-arch.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'scripts/**'
+  workflow_dispatch:
+
+jobs:
+  test-arch:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+
+    steps:
+      - name: Install system dependencies
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --needed --noconfirm git curl dbus glib2 pkgconf base-devel
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Create venv and install Python dependencies
+        working-directory: backend
+        run: |
+          source $HOME/.local/bin/env
+          uv venv --python 3.13.11
+          source .venv/bin/activate
+          uv pip install websockets==15.0.1 dbus-python==1.4.0
+
+      - name: Run server for 10 seconds
+        working-directory: backend
+        run: |
+          source .venv/bin/activate
+          timeout 10 python src/server.py || [ $? -eq 124 ]

@@ -20,7 +20,7 @@ fi
 # Step 1: Install build dependencies for dbus-python
 # Todo: Debian / Nix / SUSE support
 echo -e "\n${YELLOW}[1/5] Installing system build dependencies...${NC}"
-sudo pacman -S --needed --noconfirm dbus glib2 pkgconf base-devel
+sudo pacman -S --needed --noconfirm git curl dbus glib2 pkgconf base-devel
 
 # Step 2: Install uv
 echo -e "\n${YELLOW}[2/5] Setting up uv...${NC}"
