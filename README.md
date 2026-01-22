@@ -219,5 +219,7 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
 <p align="center">
   <img src="img/README/image-20250525013647423.png" alt="Customizing Components">
 </p>
-  
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=KangweiZhu/lyrics-on-panel&type=date&legend=top-left)](https://www.star-history.com/#KangweiZhu/lyrics-on-panel&type=date&legend=top-left)
