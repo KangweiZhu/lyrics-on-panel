@@ -36,6 +36,7 @@ PluginComponent {
     property int config_mediaControllSpacing: pluginData.mediaControllSpacing ?? 8
     property int config_mediaControllItemSize: pluginData.mediaControllItemSize ?? 12
     property int config_mediaControllItemVerticalOffset: pluginData.mediaControllItemVerticalOffset ?? 0
+    property bool config_showMediaControls: pluginData.showMediaControls ?? true
 
     property bool config_whiteMediaControlIconsChecked: pluginData.whiteMediaControlIconsChecked ?? true
     property int config_preferedWidgetWidth: pluginData.preferedWidgetWidth ?? 550
@@ -84,24 +85,15 @@ PluginComponent {
         }
     }
 
-    horizontalBarPill: Component {
+    property Component mediaControls: Component {
         Row {
-            spacing: root.config_mediaControllSpacing
-
-            StyledText {
-                text: root.currentLyric || root.lrc_not_exists
-                font.pixelSize: root.config_lyricTextSize
-                font.bold: root.config_lyricTextBold
-                font.italic: root.config_lyricTextItalic
-                color: root.config_lyricTextColor
-                anchors.verticalCenter: parent.verticalCenter
-            }
+            visible: root.config_showMediaControls
+            spacing: Theme.spacingXS
 
             Image {
                 source: root.backwardIcon
                 sourceSize.width: root.config_mediaControllItemSize
                 sourceSize.height: root.config_mediaControllItemSize
-                anchors.verticalCenter: parent.verticalCenter
 
                 MouseArea {
                     anchors.fill: parent
@@ -113,7 +105,6 @@ PluginComponent {
                 source: (root.playbackStatus === "playing") ? root.pauseIcon : root.playIcon
                 sourceSize.width: root.config_mediaControllItemSize
                 sourceSize.height: root.config_mediaControllItemSize
-                anchors.verticalCenter: parent.verticalCenter
 
                 MouseArea {
                     anchors.fill: parent
@@ -125,7 +116,6 @@ PluginComponent {
                 source: root.forwardIcon
                 sourceSize.width: root.config_mediaControllItemSize
                 sourceSize.height: root.config_mediaControllItemSize
-                anchors.verticalCenter: parent.verticalCenter
 
                 MouseArea {
                     anchors.fill: parent
@@ -137,7 +127,6 @@ PluginComponent {
                 source: root.liked ? root.likedIcon : root.likeIcon
                 sourceSize.width: root.config_mediaControllItemSize
                 sourceSize.height: root.config_mediaControllItemSize
-                anchors.verticalCenter: parent.verticalCenter
 
                 MouseArea {
                     anchors.fill: parent
@@ -149,6 +138,26 @@ PluginComponent {
                 source: root.config_yesPlayMusicChecked ? root.cloudMusicIcon : root.spotifyIcon
                 sourceSize.width: root.config_mediaControllItemSize
                 sourceSize.height: root.config_mediaControllItemSize
+            }
+        }
+    }
+
+    horizontalBarPill: Component {
+        Row {
+            spacing: root.config_mediaControllSpacing
+            StyledText {
+                text: root.currentLyric || root.lrc_not_exists
+                font.pixelSize: root.config_lyricTextSize
+                font.bold: root.config_lyricTextBold
+                font.italic: root.config_lyricTextItalic
+                color: root.config_lyricTextColor
+                anchors.verticalCenter: parent.verticalCenter
+              }
+
+            Loader {
+                active: root.config_showMediaControls
+                visible: active
+                sourceComponent: root.mediaControls
                 anchors.verticalCenter: parent.verticalCenter
             }
         }
@@ -166,55 +175,11 @@ PluginComponent {
                 anchors.horizontalCenter: parent.horizontalCenter
             }
 
-            Row {
-                spacing: Theme.spacingXS
+            Loader {
+                active: root.config_showMediaControls
+                visible: active
+                sourceComponent: root.mediaControls
                 anchors.horizontalCenter: parent.horizontalCenter
-
-                Image {
-                    source: root.backwardIcon
-                    sourceSize.width: root.config_mediaControllItemSize
-                    sourceSize.height: root.config_mediaControllItemSize
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: root.sendControl("previous")
-                    }
-                }
-
-                Image {
-                    source: (root.playbackStatus === "playing") ? root.pauseIcon : root.playIcon
-                    sourceSize.width: root.config_mediaControllItemSize
-                    sourceSize.height: root.config_mediaControllItemSize
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: root.sendControl("play_pause")
-                    }
-                }
-
-                Image {
-                    source: root.forwardIcon
-                    sourceSize.width: root.config_mediaControllItemSize
-                    sourceSize.height: root.config_mediaControllItemSize
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: root.sendControl("next")
-                    }
-                }
-
-                Image {
-                    source: root.liked ? root.likedIcon : root.likeIcon
-                    sourceSize.width: root.config_mediaControllItemSize
-                    sourceSize.height: root.config_mediaControllItemSize
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: root.liked = !root.liked
-                    }
-                }
-
-                Image {
-                    source: root.config_yesPlayMusicChecked ? root.cloudMusicIcon : root.spotifyIcon
-                    sourceSize.width: root.config_mediaControllItemSize
-                    sourceSize.height: root.config_mediaControllItemSize
-                }
             }
         }
     }
