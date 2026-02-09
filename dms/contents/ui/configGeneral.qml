@@ -113,6 +113,12 @@ PluginSettings {
         defaultValue: 0
         minimum: -10
         maximum: 10
+      }
+
+    ToggleSetting {
+        settingKey: "showMediaControls"
+        label: "Show Media Controls"
+        defaultValue: true
     }
 
     ToggleSetting {
