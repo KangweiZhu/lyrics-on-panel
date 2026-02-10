@@ -88,7 +88,7 @@ PluginComponent {
     property Component mediaControls: Component {
         Row {
             visible: root.config_showMediaControls
-            spacing: Theme.spacingXS
+            spacing: root.config_mediaControllSpacing
 
             Image {
                 source: root.backwardIcon
@@ -145,6 +145,7 @@ PluginComponent {
     horizontalBarPill: Component {
         Row {
             spacing: root.config_mediaControllSpacing
+
             StyledText {
                 text: root.currentLyric || root.lrc_not_exists
                 font.pixelSize: root.config_lyricTextSize
@@ -166,7 +167,7 @@ PluginComponent {
     verticalBarPill: Component {
         Column {
             spacing: root.config_mediaControllSpacing
-
+            
             StyledText {
                 text: root.currentLyric || root.lrc_not_exists
                 font.pixelSize: root.config_lyricTextSize - 2
