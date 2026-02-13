@@ -1,7 +1,8 @@
 import json
 import threading
+from pathlib import Path
 import urllib.request
-import urllib.parse
+from urllib.parse import quote, unquote, urlencode, urlparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from mpris_prober import find_players, find_playing_players
 from mpris_player import MprisPlayer, PlaybackStatus
@@ -159,6 +160,7 @@ class LyricsManager:
         artist = artists[0] if artists else ''
         album = track_info['album']
         length = track_info['length']
+        url = track_info['url']
         if not title or not artists:
             return
         try:
@@ -168,10 +170,12 @@ class LyricsManager:
             elif playername == 'org.mpris.MediaPlayer2.lx-music-desktop':
                 lyrics = self._fetch_lyrics_lxmusic()
             else:
-                # Check again before expensive HTTP calls
-                if self._fetch_id != fetch_id:
-                    return
-                lyrics = self._fetch_lyrics_lrclib(title, artist, album, length)
+                lyrics = self._fetch_lyrics_local(url)
+                if lyrics is None:
+                    # Check again before expensive HTTP calls
+                    if self._fetch_id != fetch_id:
+                        return
+                    lyrics = self._fetch_lyrics_lrclib(title, artist, album, length)
             # Only write if this fetch is still current
             if self._fetch_id == fetch_id:
                 self.lyrics = lyrics
@@ -221,10 +225,21 @@ class LyricsManager:
             return self._parse_lrc(text)
         return None
 
+    def _fetch_lyrics_local(self, song_path):
+        """Fetch lyrics from disk."""
+        if not song_path.startswith('file://'):
+            return None
+        lrc_path = Path(unquote(urlparse(song_path).path)).with_suffix('.lrc')
+        try:
+            content = lrc_path.read_text(encoding='utf-8')
+        except (FileNotFoundError, PermissionError, OSError):
+            return None
+        return self._parse_lrc(content)
+
     def _fetch_lyrics_lrclib(self, title, artist, album, length):
         """Fetch lyrics from lrclib.net (compatible mode). Returns parsed lyrics or None."""
         duration_sec = length // 1000000 if length else None
-        params = urllib.parse.urlencode({
+        params = urlencode({
             'track_name': title,
             'artist_name': artist,
             'album_name': album
@@ -251,7 +266,7 @@ class LyricsManager:
             return None
 
         def fetch_fuzzy():
-            url = f"https://lrclib.net/api/search?q={urllib.parse.quote(title)}"
+            url = f"https://lrclib.net/api/search?q={quote(title)}"
             status, text = self._http_get(url)
             if status == 200 and text:
                 data = json.loads(text)
