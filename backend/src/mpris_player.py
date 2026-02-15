@@ -240,6 +240,7 @@ class MprisPlayer:
             'track_number': int(meta.get('xesam:trackNumber', 0)),
             'disc_number': int(meta.get('xesam:discNumber', 0)),
             'lyrics': self._unwrap_str(meta.get('xesam:asText', '')),
+            'url': self._unwrap_str(meta.get('xesam:url', '')),
         }
 
 
