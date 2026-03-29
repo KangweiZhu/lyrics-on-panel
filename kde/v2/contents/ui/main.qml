@@ -42,6 +42,66 @@ PlasmoidItem {
             id: lyricTextContainer
             Layout.fillWidth: true
             Layout.fillHeight: true
+            clip: true
+
+            onWidthChanged: {
+                // 容器宽度改变时，重置动画和位置
+                if (lyricBounceAnimation.running) {
+                    lyricBounceAnimation.stop()
+                    lyricText.xPosition = 0
+                    restartTimer.start()
+                }
+            }
+
+            TextMetrics {
+                id: lyricTextMetrics
+                font: lyricText.font
+                text: currentLyric || lrc_not_exists
+            }
+
+            SequentialAnimation {
+                id: lyricBounceAnimation
+                running: lyricTextMetrics.width > lyricTextContainer.width && playbackStatus === "playing"
+                loops: Animation.Infinite
+
+                // 第一段：从左到右
+                PropertyAnimation {
+                    target: lyricText
+                    property: "xPosition"
+                    from: 0
+                    to: lyricTextContainer.width - lyricTextMetrics.width
+                    duration: Math.max(2000, Math.abs((lyricTextContainer.width - lyricTextMetrics.width) / 50 * 1000))
+                    easing.type: Easing.Linear
+                }
+
+                PauseAnimation { duration: 1000 }
+
+                // 第二段：从右到左
+                PropertyAnimation {
+                    target: lyricText
+                    property: "xPosition"
+                    from: lyricTextContainer.width - lyricTextMetrics.width
+                    to: 0
+                    duration: Math.max(2000, Math.abs((lyricTextContainer.width - lyricTextMetrics.width) / 50 * 1000))
+                    easing.type: Easing.Linear
+                }
+
+                PauseAnimation { duration: 1000 }
+            }
+
+            Timer {
+                id: restartTimer
+                interval: 50
+                running: false
+                repeat: false
+                onTriggered: {
+                    if (lyricTextMetrics.width > lyricTextContainer.width && playbackStatus === "playing") {
+                        // 确保位置在左侧，然后启动动画
+                        lyricText.xPosition = 0
+                        lyricBounceAnimation.start()
+                    }
+                }
+            }
 
             Text {
                 id: lyricText
@@ -50,9 +110,39 @@ PlasmoidItem {
                 font.pixelSize: config_lyricTextSize
                 font.bold: config_lyricTextBold
                 font.italic: config_lyricTextItalic
-                anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
                 anchors.verticalCenterOffset: config_lyricTextVerticalOffset
+                
+                horizontalAlignment: config_lyricTextAlignment === 0 ? Text.AlignLeft : 
+                                    (config_lyricTextAlignment === 1 ? Text.AlignHCenter : Text.AlignRight)
+                
+                property real initialXPosition: {
+                    // 计算初始对齐位置（仅在文本不滚动时使用）
+                    if (config_lyricTextAlignment === 0) {
+                        return 0 // Left
+                    } else if (config_lyricTextAlignment === 1) {
+                        return (lyricTextContainer.width - lyricTextMetrics.width) / 2 // Center
+                    } else {
+                        return lyricTextContainer.width - lyricTextMetrics.width // Right
+                    }
+                }
+                
+                property real xPosition: initialXPosition
+                
+                x: lyricTextMetrics.width <= lyricTextContainer.width || !lyricBounceAnimation.running
+                    ? initialXPosition
+                    : xPosition
+
+                onTextChanged: {
+                    // 歌词切换时，重置动画和位置
+                    lyricBounceAnimation.stop()
+                    
+                    // 强制重置到左侧起始位置
+                    lyricText.xPosition = 0
+                    
+                    // 延迟后启动动画
+                    restartTimer.start()
+                }
             }
         }
 
@@ -202,6 +292,7 @@ PlasmoidItem {
     property bool config_lyricTextBold: Plasmoid.configuration.lyricTextBold
     property bool config_lyricTextItalic: Plasmoid.configuration.lyricTextItalic
     property int config_lyricTextVerticalOffset: Plasmoid.configuration.lyricTextVerticalOffset
+    property int config_lyricTextAlignment: Plasmoid.configuration.lyricTextAlignment
 
     property int config_mediaControllSpacing: Plasmoid.configuration.mediaControllSpacing
     property int config_mediaControllItemSize: Plasmoid.configuration.mediaControllItemSize

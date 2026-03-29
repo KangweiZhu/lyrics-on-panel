@@ -19,6 +19,7 @@ Kirigami.FormLayout {
     property alias cfg_lyricTextBold: boldButton.checked   
     property alias cfg_lyricTextItalic: italicButton.checked 
     property alias cfg_lyricTextVerticalOffset: lyricTextVerticalOffsetSpinBox.value
+    property alias cfg_lyricTextAlignment: lyricTextAlignmentComboBox.currentIndex
 
     property alias cfg_mediaControllSpacing: mediaControllSpacingSpinBox.value
     property alias cfg_mediaControllItemSize: mediaControllItemSizeSpinBox.value
@@ -58,6 +59,16 @@ Kirigami.FormLayout {
     QQC2.SpinBox {
         id: lyricTextVerticalOffsetSpinBox
         Kirigami.FormData.label: i18n("Lyric text vertical offset: ")
+    }
+
+    QQLayouts.RowLayout {
+        Kirigami.FormData.label: i18n("Lyric text alignment: ")
+        
+        QQC2.ComboBox {
+            id: lyricTextAlignmentComboBox
+            model: [i18n("Left"), i18n("Center"), i18n("Right")]
+            currentIndex: 2 // Default to right
+        }
     }
 
     QQC2.SpinBox {
