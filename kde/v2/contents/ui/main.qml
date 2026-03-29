@@ -62,7 +62,6 @@ PlasmoidItem {
                 id: lyricBounceAnimation
                 running: lyricTextMetrics.width > lyricTextContainer.width && playbackStatus === "playing"
                 loops: Animation.Infinite
-                property int animationDuration: Math.max(2000, Math.abs((lyricTextContainer.width - lyricTextMetrics.width) / 50 * 1000))
 
                 // 第一段：从左到右
                 PropertyAnimation {
@@ -311,6 +310,9 @@ PlasmoidItem {
     property bool hasActivePlayer: false
     property var availablePlayers: []
     property string selectedPlayer: ""
+
+    // 计算动画持续时间
+    property int animationDuration: Math.max(2000, Math.abs((lyricTextContainer.width - lyricTextMetrics.width) / 50 * 1000))
 
     property string requestedPlayer: {
         if (selectedPlayer) {
