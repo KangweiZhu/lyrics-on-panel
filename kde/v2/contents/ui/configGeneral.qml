@@ -67,7 +67,7 @@ Kirigami.FormLayout {
         QQC2.ComboBox {
             id: lyricTextAlignmentComboBox
             model: [i18n("Left"), i18n("Center"), i18n("Right")]
-            currentIndex: 2 // Default to right
+            currentIndex: 2
         }
     }
 

@@ -45,7 +45,6 @@ PlasmoidItem {
             clip: true
 
             onWidthChanged: {
-                // 容器宽度改变时，重置动画和位置
                 if (lyricBounceAnimation.running) {
                     lyricBounceAnimation.stop()
                     restartTimer.start()
@@ -63,7 +62,6 @@ PlasmoidItem {
                 running: lyricTextMetrics.width > lyricTextContainer.width && playbackStatus === "playing"
                 loops: Animation.Infinite
 
-                // 第一段：从左到右
                 PropertyAnimation {
                     target: lyricText
                     property: "xPosition"
@@ -75,7 +73,6 @@ PlasmoidItem {
 
                 PauseAnimation { duration: 1000 }
 
-                // 第二段：从右到左
                 PropertyAnimation {
                     target: lyricText
                     property: "xPosition"
@@ -95,7 +92,6 @@ PlasmoidItem {
                 repeat: false
                 onTriggered: {
                     if (lyricTextMetrics.width > lyricTextContainer.width && playbackStatus === "playing") {
-                        // 确保位置在左侧，然后启动动画
                         lyricText.xPosition = 0
                         lyricBounceAnimation.start()
                     }
@@ -113,13 +109,12 @@ PlasmoidItem {
                 anchors.verticalCenterOffset: config_lyricTextVerticalOffset
                 
                 property real initialXPosition: {
-                    // 计算初始对齐位置（仅在文本不滚动时使用）
                     if (config_lyricTextAlignment === 0) {
-                        return 0 // Left
+                        return 0
                     } else if (config_lyricTextAlignment === 1) {
-                        return (lyricTextContainer.width - lyricTextMetrics.width) / 2 // Center
+                        return (lyricTextContainer.width - lyricTextMetrics.width) / 2
                     } else {
-                        return lyricTextContainer.width - lyricTextMetrics.width // Right
+                        return lyricTextContainer.width - lyricTextMetrics.width
                     }
                 }
                 
@@ -130,9 +125,7 @@ PlasmoidItem {
                     : xPosition
 
                 onTextChanged: {
-                    // 歌词切换时，重置动画和位置
                     lyricBounceAnimation.stop()
-                    // 延迟后启动动画
                     restartTimer.start()
                 }
             }
@@ -310,8 +303,6 @@ PlasmoidItem {
     property bool hasActivePlayer: false
     property var availablePlayers: []
     property string selectedPlayer: ""
-
-    // 计算动画持续时间
     property int animationDuration: Math.max(2000, Math.abs((lyricTextContainer.width - lyricTextMetrics.width) / 50 * 1000))
 
     property string requestedPlayer: {
