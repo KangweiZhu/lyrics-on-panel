@@ -39,8 +39,8 @@
         <entry name="lyricTextVerticalOffset" type="Int">
             <default>0</default>
         </entry>
-        <entry name="lyricTextAlignment" type="String">
-            <default>right</default>
+        <entry name="lyricTextAlignment" type="int">
+            <default>2</default>
         </entry>
         <entry name="whiteMediaControlIconsChecked" type="Bool">
             <default>false</default>

@@ -48,7 +48,6 @@ PlasmoidItem {
                 // 容器宽度改变时，重置动画和位置
                 if (lyricBounceAnimation.running) {
                     lyricBounceAnimation.stop()
-                    lyricText.xPosition = 0
                     restartTimer.start()
                 }
             }
@@ -63,6 +62,7 @@ PlasmoidItem {
                 id: lyricBounceAnimation
                 running: lyricTextMetrics.width > lyricTextContainer.width && playbackStatus === "playing"
                 loops: Animation.Infinite
+                property int animationDuration: Math.max(2000, Math.abs((lyricTextContainer.width - lyricTextMetrics.width) / 50 * 1000))
 
                 // 第一段：从左到右
                 PropertyAnimation {
@@ -70,7 +70,7 @@ PlasmoidItem {
                     property: "xPosition"
                     from: 0
                     to: lyricTextContainer.width - lyricTextMetrics.width
-                    duration: Math.max(2000, Math.abs((lyricTextContainer.width - lyricTextMetrics.width) / 50 * 1000))
+                    duration: animationDuration
                     easing.type: Easing.Linear
                 }
 
@@ -82,7 +82,7 @@ PlasmoidItem {
                     property: "xPosition"
                     from: lyricTextContainer.width - lyricTextMetrics.width
                     to: 0
-                    duration: Math.max(2000, Math.abs((lyricTextContainer.width - lyricTextMetrics.width) / 50 * 1000))
+                    duration: animationDuration
                     easing.type: Easing.Linear
                 }
 
@@ -113,9 +113,6 @@ PlasmoidItem {
                 anchors.verticalCenter: parent.verticalCenter
                 anchors.verticalCenterOffset: config_lyricTextVerticalOffset
                 
-                horizontalAlignment: config_lyricTextAlignment === 0 ? Text.AlignLeft : 
-                                    (config_lyricTextAlignment === 1 ? Text.AlignHCenter : Text.AlignRight)
-                
                 property real initialXPosition: {
                     // 计算初始对齐位置（仅在文本不滚动时使用）
                     if (config_lyricTextAlignment === 0) {
@@ -136,10 +133,6 @@ PlasmoidItem {
                 onTextChanged: {
                     // 歌词切换时，重置动画和位置
                     lyricBounceAnimation.stop()
-                    
-                    // 强制重置到左侧起始位置
-                    lyricText.xPosition = 0
-                    
                     // 延迟后启动动画
                     restartTimer.start()
                 }
