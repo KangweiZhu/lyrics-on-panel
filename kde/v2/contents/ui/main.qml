@@ -42,6 +42,61 @@ PlasmoidItem {
             id: lyricTextContainer
             Layout.fillWidth: true
             Layout.fillHeight: true
+            clip: true
+
+            onWidthChanged: {
+                if (lyricBounceAnimation.running) {
+                    lyricBounceAnimation.stop()
+                    restartTimer.start()
+                }
+            }
+
+            TextMetrics {
+                id: lyricTextMetrics
+                font: lyricText.font
+                text: currentLyric || lrc_not_exists
+            }
+
+            SequentialAnimation {
+                id: lyricBounceAnimation
+                running: lyricTextMetrics.width > lyricTextContainer.width && playbackStatus === "playing"
+                loops: Animation.Infinite
+
+                PropertyAnimation {
+                    target: lyricText
+                    property: "xPosition"
+                    from: 0
+                    to: lyricTextContainer.width - lyricTextMetrics.width
+                    duration: animationDuration
+                    easing.type: Easing.Linear
+                }
+
+                PauseAnimation { duration: 1000 }
+
+                PropertyAnimation {
+                    target: lyricText
+                    property: "xPosition"
+                    from: lyricTextContainer.width - lyricTextMetrics.width
+                    to: 0
+                    duration: animationDuration
+                    easing.type: Easing.Linear
+                }
+
+                PauseAnimation { duration: 1000 }
+            }
+
+            Timer {
+                id: restartTimer
+                interval: 50
+                running: false
+                repeat: false
+                onTriggered: {
+                    if (lyricTextMetrics.width > lyricTextContainer.width && playbackStatus === "playing") {
+                        lyricText.xPosition = 0
+                        lyricBounceAnimation.start()
+                    }
+                }
+            }
 
             Text {
                 id: lyricText
@@ -50,9 +105,29 @@ PlasmoidItem {
                 font.pixelSize: config_lyricTextSize
                 font.bold: config_lyricTextBold
                 font.italic: config_lyricTextItalic
-                anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
                 anchors.verticalCenterOffset: config_lyricTextVerticalOffset
+                
+                property real initialXPosition: {
+                    if (config_lyricTextAlignment === 0) {
+                        return 0
+                    } else if (config_lyricTextAlignment === 1) {
+                        return (lyricTextContainer.width - lyricTextMetrics.width) / 2
+                    } else {
+                        return lyricTextContainer.width - lyricTextMetrics.width
+                    }
+                }
+                
+                property real xPosition: initialXPosition
+                
+                x: lyricTextMetrics.width <= lyricTextContainer.width || !lyricBounceAnimation.running
+                    ? initialXPosition
+                    : xPosition
+
+                onTextChanged: {
+                    lyricBounceAnimation.stop()
+                    restartTimer.start()
+                }
             }
         }
 
@@ -202,6 +277,7 @@ PlasmoidItem {
     property bool config_lyricTextBold: Plasmoid.configuration.lyricTextBold
     property bool config_lyricTextItalic: Plasmoid.configuration.lyricTextItalic
     property int config_lyricTextVerticalOffset: Plasmoid.configuration.lyricTextVerticalOffset
+    property int config_lyricTextAlignment: Plasmoid.configuration.lyricTextAlignment
 
     property int config_mediaControllSpacing: Plasmoid.configuration.mediaControllSpacing
     property int config_mediaControllItemSize: Plasmoid.configuration.mediaControllItemSize
@@ -227,6 +303,7 @@ PlasmoidItem {
     property bool hasActivePlayer: false
     property var availablePlayers: []
     property string selectedPlayer: ""
+    property int animationDuration: Math.max(2000, Math.abs((lyricTextContainer.width - lyricTextMetrics.width) / 50 * 1000))
 
     property string requestedPlayer: {
         if (selectedPlayer) {
