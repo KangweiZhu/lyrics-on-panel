@@ -69,7 +69,7 @@ PluginComponent {
         } else if (config_spotifyChecked) {
             return "org.mpris.MediaPlayer2.spotify"
         } else if (config_lxMusicChecked) {
-            return "org.mpris.MediaPlayer2.lx-music-desktop"
+            return "lx-music-desktop"
         } else {
             return ""
         }
@@ -309,7 +309,10 @@ PluginComponent {
 
     function sendPollRequest() {
         if (pollSocket.status === WebSocket.Open) {
-            var request = { "player": requestedPlayer || null }
+            var request = {
+                "player": requestedPlayer || null,
+                "lxMusicPort": config_lxMusicPort
+            }
             pollSocket.sendTextMessage(JSON.stringify(request))
         }
     }
@@ -375,7 +378,7 @@ PluginComponent {
         }
         var request = {
             "action": action,
-            "player": requestedPlayer || currentPlayerBusName || null
+            "player": currentPlayerBusName || requestedPlayer || null
         }
         controlSocket.sendTextMessage(JSON.stringify(request))
     }

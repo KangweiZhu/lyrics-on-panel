@@ -36,7 +36,7 @@ class LyricsManager:
         self.available_players = available_players or []
     
     
-    def poll_status(self, requested_playername=None):
+    def poll_status(self, requested_playername=None, lxmusic_port=23330):
         """
         Polls for player changes and state updates.
         
@@ -67,9 +67,18 @@ class LyricsManager:
         current_playername = self.playername
         current_playerobj = None
         if requested_playername:
-             if requested_playername in playernames:
-                 current_playername = requested_playername
-             else:
+              if requested_playername in playernames:
+                  current_playername = requested_playername
+              elif requested_playername == 'lx-music-desktop':
+                 for playername in playernames:
+                     player = MprisPlayer(playername)
+                     if player.obj and player.identity == 'lx-music-desktop':
+                         current_playername = playername
+                         current_playerobj = player
+                         break
+                 else:
+                    return self._get_empty_state()
+              else:
                 return self._get_empty_state()
         else:
             # Global mode: find the best player
@@ -131,7 +140,7 @@ class LyricsManager:
             else:
                 self.lyrics = None
                 self._fetch_id += 1
-                threading.Thread(target=self._fetch_lyrics, args=(current_playername, track_info, self._fetch_id), daemon=True).start()
+                threading.Thread(target=self._fetch_lyrics, args=(current_playername, identity, track_info, self._fetch_id, lxmusic_port), daemon=True).start()
         self.position_ms = position
         current_lyric = self._get_current_lyric()
         self.setup(
@@ -151,7 +160,7 @@ class LyricsManager:
         return self.get_state()
 
 
-    def _fetch_lyrics(self, playername, track_info, fetch_id):
+    def _fetch_lyrics(self, playername, identity, track_info, fetch_id, lxmusic_port=23330):
         # Check if this fetch is still current
         if self._fetch_id != fetch_id:
             return
@@ -167,8 +176,8 @@ class LyricsManager:
             lyrics = None
             if playername == 'org.mpris.MediaPlayer2.yesplaymusic':
                 lyrics = self._fetch_lyrics_ypm(title)
-            elif playername == 'org.mpris.MediaPlayer2.lx-music-desktop':
-                lyrics = self._fetch_lyrics_lxmusic()
+            elif identity == 'lx-music-desktop':
+                lyrics = self._fetch_lyrics_lxmusic(lxmusic_port)
             else:
                 lyrics = self._fetch_lyrics_local(url)
                 if lyrics is None:
