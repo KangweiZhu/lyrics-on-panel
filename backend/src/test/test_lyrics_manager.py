@@ -2,7 +2,12 @@ import json
 import unittest
 
 import lyrics_manager
-from lyrics_manager import LRCLIB_TIMEOUT, LYRICS_RETRY_INTERVAL, LyricsManager
+from lyrics_manager import (
+    LRCLIB_TIMEOUT,
+    LYRICS_RETRY_INTERVAL,
+    MAX_LYRICS_FETCH_ATTEMPTS,
+    LyricsManager,
+)
 
 
 class LyricsManagerTest(unittest.TestCase):
@@ -51,18 +56,21 @@ class LyricsManagerTest(unittest.TestCase):
         def fake_start(playername, info, key):
             starts.append((playername, key))
             manager._last_fetch_attempts[key] = fake_monotonic()
+            manager._fetch_attempts_count[key] = manager._fetch_attempts_count.get(key, 0) + 1
 
         original_monotonic = lyrics_manager.time.monotonic
         try:
             lyrics_manager.time.monotonic = fake_monotonic
             manager._start_lyrics_fetch = fake_start
 
-            self.assertTrue(manager._should_retry_lyrics_fetch(track_key))
-            manager._start_lyrics_fetch("org.mpris.MediaPlayer2.spotify", track_info, track_key)
-            self.assertFalse(manager._should_retry_lyrics_fetch(track_key))
+            for _ in range(MAX_LYRICS_FETCH_ATTEMPTS):
+                self.assertTrue(manager._should_retry_lyrics_fetch(track_key))
+                manager._start_lyrics_fetch("org.mpris.MediaPlayer2.spotify", track_info, track_key)
+                self.assertFalse(manager._should_retry_lyrics_fetch(track_key))
+                now[0] += LYRICS_RETRY_INTERVAL
 
-            now[0] += LYRICS_RETRY_INTERVAL
-            self.assertTrue(manager._should_retry_lyrics_fetch(track_key))
+            self.assertFalse(manager._should_retry_lyrics_fetch(track_key))
+            self.assertEqual(len(starts), MAX_LYRICS_FETCH_ATTEMPTS)
         finally:
             lyrics_manager.time.monotonic = original_monotonic
 

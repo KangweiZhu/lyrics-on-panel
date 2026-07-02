@@ -10,6 +10,7 @@ from mpris_player import MprisPlayer, PlaybackStatus
 
 LRCLIB_TIMEOUT = 12
 LYRICS_RETRY_INTERVAL = 10
+MAX_LYRICS_FETCH_ATTEMPTS = 3
 
 class LyricsManager:
     """
@@ -18,10 +19,12 @@ class LyricsManager:
     Note: ms here == microseconds, not miliseconds.
     """
     def __init__(self):
+        self._lock = threading.RLock()
         self.lyrics_cache = {}
         self._fetch_id = 0
         self._fetching_track_key = None
         self._last_fetch_attempts = {}
+        self._fetch_attempts_count = {}
         self.setup()
     
     
@@ -29,19 +32,20 @@ class LyricsManager:
               duration=0, identity=None, lyrics=None, current_lyric=None,
               playback_status=PlaybackStatus.STOPPED, position_ms=0, available_players=None,
               track_key=None):
-        self.playername = playername
-        self.playerobj = playerobj
-        self.title = title
-        self.artist = artist
-        self.album = album
-        self.duration = duration
-        self.identity = identity
-        self.lyrics = lyrics
-        self.current_lyric = current_lyric
-        self.playback_status = playback_status
-        self.position_ms = position_ms
-        self.available_players = available_players or []
-        self.track_key = track_key
+        with self._lock:
+            self.playername = playername
+            self.playerobj = playerobj
+            self.title = title
+            self.artist = artist
+            self.album = album
+            self.duration = duration
+            self.identity = identity
+            self.lyrics = lyrics
+            self.current_lyric = current_lyric
+            self.playback_status = playback_status
+            self.position_ms = position_ms
+            self.available_players = available_players or []
+            self.track_key = track_key
     
     
     def poll_status(self, requested_playername=None):
@@ -72,7 +76,8 @@ class LyricsManager:
         
         if not playernames:
             return set_free()
-        current_playername = self.playername
+        with self._lock:
+            current_playername = self.playername
         current_playerobj = None
         if requested_playername:
              if requested_playername in playernames:
@@ -82,13 +87,15 @@ class LyricsManager:
         else:
             # Global mode: find the best player
             # If we have a current player, check if it's still valid
-            if self.playername and self.playername in playernames:
+            with self._lock:
+                previous_playername = self.playername
+            if previous_playername and previous_playername in playernames:
                 try:
-                    player = MprisPlayer(self.playername)
+                    player = MprisPlayer(previous_playername)
                     if player.obj:
                         if player.playback_status == PlaybackStatus.PLAYING:
                             # Current player is playing, use it
-                            current_playername = self.playername
+                            current_playername = previous_playername
                             current_playerobj = player
                         else:
                             # Current player paused/stopped, check for other playing players
@@ -97,7 +104,7 @@ class LyricsManager:
                                 current_playername = playing_playernames[0]
                             else:
                                 # No playing player, keep current one
-                                current_playername = self.playername
+                                current_playername = previous_playername
                                 current_playerobj = player
                 except Exception:
                     pass
@@ -123,39 +130,40 @@ class LyricsManager:
             identity = current_playerobj.identity
         except Exception:
             return set_free()
-        track_key = self._track_key(current_playername, track_info)
-        track_changed = self.track_key != track_key
-        if track_changed:
-            self.title = track_info['title']
-            self.artist = track_info['artist']
-            self.album = track_info['album']
-            # Check if this player has cached lyrics for current track
-            cached = self.lyrics_cache.get(track_key)
-            if cached:
-                self.lyrics = cached
-            else:
-                self.lyrics = None
-                self._start_lyrics_fetch(current_playername, track_info, track_key)
-        elif self._should_retry_lyrics_fetch(track_key):
-            self._start_lyrics_fetch(current_playername, track_info, track_key)
-        self.position_ms = position
-        current_lyric = self._get_current_lyric()
-        self.setup(
-            playername=current_playername,
-            playerobj=current_playerobj,
-            title=track_info['title'],
-            artist=track_info['artist'],
-            album=track_info['album'],
-            duration=track_info['length'],
-            identity=identity,
-            lyrics=self.lyrics,
-            current_lyric=current_lyric,
-            playback_status=playback_status,
-            position_ms=position,
-            available_players=playernames,
-            track_key=track_key
-        )
-        return self.get_state()
+        with self._lock:
+            track_key = self._track_key(current_playername, track_info)
+            track_changed = self.track_key != track_key
+            if track_changed:
+                self.title = track_info['title']
+                self.artist = track_info['artist']
+                self.album = track_info['album']
+                # Check if this player has cached lyrics for current track
+                cached = self.lyrics_cache.get(track_key)
+                if cached:
+                    self.lyrics = cached
+                else:
+                    self.lyrics = None
+                    self._start_lyrics_fetch_locked(current_playername, track_info, track_key)
+            elif self._should_retry_lyrics_fetch_locked(track_key):
+                self._start_lyrics_fetch_locked(current_playername, track_info, track_key)
+            self.position_ms = position
+            current_lyric = self._get_current_lyric()
+            self.setup(
+                playername=current_playername,
+                playerobj=current_playerobj,
+                title=track_info['title'],
+                artist=track_info['artist'],
+                album=track_info['album'],
+                duration=track_info['length'],
+                identity=identity,
+                lyrics=self.lyrics,
+                current_lyric=current_lyric,
+                playback_status=playback_status,
+                position_ms=position,
+                available_players=playernames,
+                track_key=track_key
+            )
+            return self.get_state()
 
     def _track_key(self, playername, track_info):
         return (
@@ -168,27 +176,46 @@ class LyricsManager:
 
 
     def _should_retry_lyrics_fetch(self, track_key):
+        with self._lock:
+            return self._should_retry_lyrics_fetch_locked(track_key)
+
+
+    def _should_retry_lyrics_fetch_locked(self, track_key):
         if self.lyrics or self._fetching_track_key == track_key:
+            return False
+        attempts = self._fetch_attempts_count.get(track_key, 0)
+        if attempts >= MAX_LYRICS_FETCH_ATTEMPTS:
             return False
         last_attempt = self._last_fetch_attempts.get(track_key, 0)
         return time.monotonic() - last_attempt >= LYRICS_RETRY_INTERVAL
 
 
     def _start_lyrics_fetch(self, playername, track_info, track_key):
+        with self._lock:
+            return self._start_lyrics_fetch_locked(playername, track_info, track_key)
+
+
+    def _start_lyrics_fetch_locked(self, playername, track_info, track_key):
+        attempts = self._fetch_attempts_count.get(track_key, 0)
+        if attempts >= MAX_LYRICS_FETCH_ATTEMPTS:
+            return False
         self._fetch_id += 1
         self._fetching_track_key = track_key
         self._last_fetch_attempts[track_key] = time.monotonic()
+        self._fetch_attempts_count[track_key] = attempts + 1
         threading.Thread(
             target=self._fetch_lyrics,
             args=(playername, track_info, track_key, self._fetch_id),
             daemon=True
         ).start()
+        return True
 
 
     def _fetch_lyrics(self, playername, track_info, track_key, fetch_id):
         # Check if this fetch is still current
-        if self._fetch_id != fetch_id:
-            return
+        with self._lock:
+            if self._fetch_id != fetch_id:
+                return
         try:
             title = track_info['title']
             artists = track_info['artist']
@@ -207,21 +234,25 @@ class LyricsManager:
                 lyrics = self._fetch_lyrics_local(url)
                 if lyrics is None:
                     # Check again before expensive HTTP calls
-                    if self._fetch_id != fetch_id:
-                        return
+                    with self._lock:
+                        if self._fetch_id != fetch_id:
+                            return
                     lyrics = self._fetch_lyrics_lrclib(title, artist, album, length)
             # Only write if this fetch is still current
-            if self._fetch_id == fetch_id:
-                self.lyrics = lyrics
-                if lyrics:
-                    self.lyrics_cache[track_key] = lyrics
+            with self._lock:
+                if self._fetch_id == fetch_id:
+                    self.lyrics = lyrics
+                    if lyrics:
+                        self.lyrics_cache[track_key] = lyrics
         except Exception as e:
-            if self._fetch_id == fetch_id:
-                self.lyrics = None
+            with self._lock:
+                if self._fetch_id == fetch_id:
+                    self.lyrics = None
         finally:
-            if self._fetch_id == fetch_id:
-                if self._fetching_track_key == track_key:
-                    self._fetching_track_key = None
+            with self._lock:
+                if self._fetch_id == fetch_id:
+                    if self._fetching_track_key == track_key:
+                        self._fetching_track_key = None
 
 
     def _http_get(self, url, timeout=5):
@@ -371,28 +402,29 @@ class LyricsManager:
         
         
     def get_state(self):
-        if not self.playerobj:
-            return self._get_empty_state()
-        return {
-            "playback_status": self.playback_status.value.lower(),
-            "player": {
-                "identity": self.identity,
-                "bus_name": self.playername
-            },
-            "track": {
-                "title": self.title,
-                "artist": ", ".join(self.artist) if self.artist else "",
-                "album": self.album,
-                "duration": self.duration
-            },
-            "position_ms": self.position_ms,
-            "lyrics": {
-                'current_lyric': self.current_lyric,
-                'available': bool(self.lyrics),
-                'fetching': self._fetching_track_key == self.track_key,
-            },
-            "available_players": self.available_players
-        }
+        with self._lock:
+            if not self.playerobj:
+                return self._get_empty_state()
+            return {
+                "playback_status": self.playback_status.value.lower(),
+                "player": {
+                    "identity": self.identity,
+                    "bus_name": self.playername
+                },
+                "track": {
+                    "title": self.title,
+                    "artist": ", ".join(self.artist) if self.artist else "",
+                    "album": self.album,
+                    "duration": self.duration
+                },
+                "position_ms": self.position_ms,
+                "lyrics": {
+                    'current_lyric': self.current_lyric,
+                    'available': bool(self.lyrics),
+                    'fetching': self._fetching_track_key == self.track_key,
+                },
+                "available_players": self.available_players
+            }
 
 
     def _get_empty_state(self):
