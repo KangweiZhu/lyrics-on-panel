@@ -1,11 +1,15 @@
 import json
 import threading
+import time
 from pathlib import Path
 import urllib.request
 from urllib.parse import quote, unquote, urlencode, urlparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from mpris_prober import find_players, find_playing_players
 from mpris_player import MprisPlayer, PlaybackStatus
+
+LRCLIB_TIMEOUT = 12
+LYRICS_RETRY_INTERVAL = 10
 
 class LyricsManager:
     """
@@ -16,12 +20,15 @@ class LyricsManager:
     def __init__(self):
         self.lyrics_cache = {}
         self._fetch_id = 0
+        self._fetching_track_key = None
+        self._last_fetch_attempts = {}
         self.setup()
     
     
     def setup(self, playername=None, playerobj=None, title=None, artist=None, album=None,
               duration=0, identity=None, lyrics=None, current_lyric=None,
-              playback_status=PlaybackStatus.STOPPED, position_ms=0, available_players=None):
+              playback_status=PlaybackStatus.STOPPED, position_ms=0, available_players=None,
+              track_key=None):
         self.playername = playername
         self.playerobj = playerobj
         self.title = title
@@ -34,6 +41,7 @@ class LyricsManager:
         self.playback_status = playback_status
         self.position_ms = position_ms
         self.available_players = available_players or []
+        self.track_key = track_key
     
     
     def poll_status(self, requested_playername=None):
@@ -115,23 +123,21 @@ class LyricsManager:
             identity = current_playerobj.identity
         except Exception:
             return set_free()
-        track_changed = (self.title != track_info['title']
-                or self.artist != track_info['artist']
-                or self.album != track_info['album'])
+        track_key = self._track_key(current_playername, track_info)
+        track_changed = self.track_key != track_key
         if track_changed:
             self.title = track_info['title']
             self.artist = track_info['artist']
             self.album = track_info['album']
             # Check if this player has cached lyrics for current track
-            cached = self.lyrics_cache.get(current_playername)
-            if (cached and cached['title'] == track_info['title']
-                    and cached['artist'] == track_info['artist']
-                    and cached['album'] == track_info['album']):
-                self.lyrics = cached['lyrics']
+            cached = self.lyrics_cache.get(track_key)
+            if cached:
+                self.lyrics = cached
             else:
                 self.lyrics = None
-                self._fetch_id += 1
-                threading.Thread(target=self._fetch_lyrics, args=(current_playername, track_info, self._fetch_id), daemon=True).start()
+                self._start_lyrics_fetch(current_playername, track_info, track_key)
+        elif self._should_retry_lyrics_fetch(track_key):
+            self._start_lyrics_fetch(current_playername, track_info, track_key)
         self.position_ms = position
         current_lyric = self._get_current_lyric()
         self.setup(
@@ -146,24 +152,52 @@ class LyricsManager:
             current_lyric=current_lyric,
             playback_status=playback_status,
             position_ms=position,
-            available_players=playernames
+            available_players=playernames,
+            track_key=track_key
         )
         return self.get_state()
 
+    def _track_key(self, playername, track_info):
+        return (
+            playername,
+            track_info['title'],
+            tuple(track_info['artist']),
+            track_info['album'],
+            track_info['length'],
+        )
 
-    def _fetch_lyrics(self, playername, track_info, fetch_id):
+
+    def _should_retry_lyrics_fetch(self, track_key):
+        if self.lyrics or self._fetching_track_key == track_key:
+            return False
+        last_attempt = self._last_fetch_attempts.get(track_key, 0)
+        return time.monotonic() - last_attempt >= LYRICS_RETRY_INTERVAL
+
+
+    def _start_lyrics_fetch(self, playername, track_info, track_key):
+        self._fetch_id += 1
+        self._fetching_track_key = track_key
+        self._last_fetch_attempts[track_key] = time.monotonic()
+        threading.Thread(
+            target=self._fetch_lyrics,
+            args=(playername, track_info, track_key, self._fetch_id),
+            daemon=True
+        ).start()
+
+
+    def _fetch_lyrics(self, playername, track_info, track_key, fetch_id):
         # Check if this fetch is still current
         if self._fetch_id != fetch_id:
             return
-        title = track_info['title']
-        artists = track_info['artist']
-        artist = artists[0] if artists else ''
-        album = track_info['album']
-        length = track_info['length']
-        url = track_info['url']
-        if not title or not artists:
-            return
         try:
+            title = track_info['title']
+            artists = track_info['artist']
+            artist = artists[0] if artists else ''
+            album = track_info['album']
+            length = track_info['length']
+            url = track_info['url']
+            if not title or not artists:
+                return
             lyrics = None
             if playername == 'org.mpris.MediaPlayer2.yesplaymusic':
                 lyrics = self._fetch_lyrics_ypm(title)
@@ -180,15 +214,14 @@ class LyricsManager:
             if self._fetch_id == fetch_id:
                 self.lyrics = lyrics
                 if lyrics:
-                    self.lyrics_cache[playername] = {
-                        'title': title,
-                        'artist': artists,
-                        'album': album,
-                        'lyrics': lyrics
-                    }
+                    self.lyrics_cache[track_key] = lyrics
         except Exception as e:
             if self._fetch_id == fetch_id:
                 self.lyrics = None
+        finally:
+            if self._fetch_id == fetch_id:
+                if self._fetching_track_key == track_key:
+                    self._fetching_track_key = None
 
 
     def _http_get(self, url, timeout=5):
@@ -249,7 +282,7 @@ class LyricsManager:
             if not duration_sec:
                 return None
             url = f"https://lrclib.net/api/get?{params}&duration={duration_sec}"
-            status, text = self._http_get(url)
+            status, text = self._http_get(url, timeout=LRCLIB_TIMEOUT)
             if status == 200 and text:
                 data = json.loads(text)
                 return data.get('syncedLyrics')
@@ -257,7 +290,7 @@ class LyricsManager:
 
         def fetch_search():
             url = f"https://lrclib.net/api/search?{params}"
-            status, text = self._http_get(url)
+            status, text = self._http_get(url, timeout=LRCLIB_TIMEOUT)
             if status == 200 and text:
                 data = json.loads(text)
                 for result in data:
@@ -267,7 +300,7 @@ class LyricsManager:
 
         def fetch_fuzzy():
             url = f"https://lrclib.net/api/search?q={quote(title)}"
-            status, text = self._http_get(url)
+            status, text = self._http_get(url, timeout=LRCLIB_TIMEOUT)
             if status == 200 and text:
                 data = json.loads(text)
                 for result in data:
@@ -355,6 +388,8 @@ class LyricsManager:
             "position_ms": self.position_ms,
             "lyrics": {
                 'current_lyric': self.current_lyric,
+                'available': bool(self.lyrics),
+                'fetching': self._fetching_track_key == self.track_key,
             },
             "available_players": self.available_players
         }
