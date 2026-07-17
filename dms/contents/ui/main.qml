@@ -60,6 +60,10 @@ PluginComponent {
     property bool hasActivePlayer: false
     property var availablePlayers: []
     property string selectedPlayer: ""
+    // Throttle polling so WebSocket responses don't create a busy loop.
+    readonly property int pollInterval: playbackStatus === "playing"
+        ? 250
+        : (hasActivePlayer ? 1000 : 3000)
 
     property string requestedPlayer: {
         if (selectedPlayer) {
@@ -275,10 +279,10 @@ PluginComponent {
             try {
                 var data = JSON.parse(message)
                 handlePollResponse(data)
-                sendPollRequest()
             } catch (e) {
                 console.log("Error parsing poll response:", e)
             }
+            pollTimer.restart()
         }
     }
 
@@ -312,6 +316,14 @@ PluginComponent {
             var request = { "player": requestedPlayer || null }
             pollSocket.sendTextMessage(JSON.stringify(request))
         }
+    }
+
+    Timer {
+        id: pollTimer
+        interval: root.pollInterval
+        running: false
+        repeat: false
+        onTriggered: sendPollRequest()
     }
 
     Timer {

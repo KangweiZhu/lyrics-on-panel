@@ -303,6 +303,10 @@ PlasmoidItem {
     property bool hasActivePlayer: false
     property var availablePlayers: []
     property string selectedPlayer: ""
+    // Throttle polling so WebSocket responses don't create a busy loop.
+    readonly property int pollInterval: playbackStatus === "playing"
+        ? 250
+        : (hasActivePlayer ? 1000 : 3000)
     property int animationDuration: Math.max(2000, Math.abs((lyricTextContainer.width - lyricTextMetrics.width) / 50 * 1000))
 
     property string requestedPlayer: {
@@ -354,10 +358,10 @@ PlasmoidItem {
             try {
                 var data = JSON.parse(message)
                 handlePollResponse(data)
-                sendPollRequest()
             } catch (e) {
                 console.log("Error parsing poll response:", e)
             }
+            pollTimer.restart()
         }
     }
 
@@ -391,6 +395,14 @@ PlasmoidItem {
             var request = { "player": requestedPlayer || null }
             pollSocket.sendTextMessage(JSON.stringify(request))
         }
+    }
+
+    Timer {
+        id: pollTimer
+        interval: root.pollInterval
+        running: false
+        repeat: false
+        onTriggered: sendPollRequest()
     }
 
     Timer {
