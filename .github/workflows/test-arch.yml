@@ -24,26 +24,34 @@ jobs:
       - name: Install system dependencies
         run: |
           pacman -Syu --noconfirm
-          pacman -S --needed --noconfirm git curl dbus glib2 pkgconf base-devel
+          pacman -S --needed --noconfirm base-devel cmake dbus git rust
 
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install uv
-        run: |
-          curl -LsSf https://astral.sh/uv/install.sh | sh
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - name: Check formatting
+        working-directory: backend
+        run: cargo fmt --check
 
-      - name: Create venv and install Python dependencies
+      - name: Run tests
+        working-directory: backend
+        run: cargo test --locked
+
+      - name: Run Clippy
+        working-directory: backend
+        run: cargo clippy --locked -- -D warnings
+
+      - name: Build release backend
+        working-directory: backend
+        run: cargo build --release --locked
+
+      - name: Smoke test release backend
         working-directory: backend
         run: |
-          source $HOME/.local/bin/env
-          uv venv --python 3.13.11
-          source .venv/bin/activate
-          uv pip install websockets==15.0.1 dbus-python==1.4.0
-
-      - name: Run server for 10 seconds
-        working-directory: backend
-        run: |
-          source .venv/bin/activate
-          timeout 10 python src/server.py || [ $? -eq 124 ]
+          dbus-run-session -- bash -euo pipefail -c '
+            ./target/release/lyrics-on-panel-backend &
+            backend_pid=$!
+            trap "kill $backend_pid 2>/dev/null || true; wait $backend_pid 2>/dev/null || true" EXIT
+            sleep 2
+            kill -0 "$backend_pid"
+          '
