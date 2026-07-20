@@ -261,11 +261,13 @@ PluginComponent {
                 sendPollRequest()
             } else if (pollSocket.status === WebSocket.Closed) {
                 console.log("Poll WebSocket closed, reconnecting...")
+                pollTimer.stop()
                 hasActivePlayer = false
                 currentLyric = ""
                 reconnectTimer.start()
             } else if (pollSocket.status === WebSocket.Error) {
                 console.log("Poll WebSocket error:", pollSocket.errorString)
+                pollTimer.stop()
                 hasActivePlayer = false
                 reconnectTimer.start()
             }
@@ -275,11 +277,21 @@ PluginComponent {
             try {
                 var data = JSON.parse(message)
                 handlePollResponse(data)
-                sendPollRequest()
+                pollTimer.restart()
             } catch (e) {
                 console.log("Error parsing poll response:", e)
+                if (pollSocket.status === WebSocket.Open) {
+                    pollTimer.restart()
+                }
             }
         }
+    }
+
+    Timer {
+        id: pollTimer
+        interval: playbackStatus === "playing" ? 250 : 1000
+        repeat: false
+        onTriggered: sendPollRequest()
     }
 
     WebSocket {
@@ -335,8 +347,12 @@ PluginComponent {
     }
 
     function handlePollResponse(data) {
+        availablePlayers = data && data.available_players ? data.available_players : []
         if (!data || !data.player) {
             hasActivePlayer = false
+            currentPlayerBusName = ""
+            currentPlayerIdentity = ""
+            positionMs = 0
             currentLyric = ""
             currentTitle = ""
             currentArtist = ""
@@ -364,10 +380,6 @@ PluginComponent {
             currentLyric = data.lyrics.current_lyric
         } else {
             currentLyric = ""
-        }
-
-        if (data.available_players) {
-            availablePlayers = data.available_players
         }
     }
 
