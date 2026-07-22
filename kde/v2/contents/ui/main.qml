@@ -179,7 +179,7 @@ PlasmoidItem {
 
                 MouseArea {
                     anchors.fill: parent
-                    onClicked: liked = !liked
+                    onClicked: sendControl("like")
                 }
             }
 
@@ -382,7 +382,11 @@ PlasmoidItem {
             try {
                 var data = JSON.parse(message)
                 if (!data.success) {
-                    console.log("Control command failed")
+                    console.log("Control command failed:", data.error || "unknown error")
+                    return
+                }
+                if (data.action === "like") {
+                    liked = !liked
                 }
             } catch (e) {
                 console.log("Error parsing control response:", e)

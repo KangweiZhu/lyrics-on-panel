@@ -86,8 +86,8 @@ class LyricsServer:
                     action = data.get("action")
                     player_name = data.get("player")
                     loop = asyncio.get_running_loop()
-                    success = await loop.run_in_executor(None, self._execute_control, action, player_name)
-                    await websocket.send(json.dumps({"success": success}))
+                    result = await loop.run_in_executor(None, self._execute_control, action, player_name)
+                    await websocket.send(json.dumps(result))
                 except json.JSONDecodeError:
                     await websocket.send(json.dumps({"error": "Invalid JSON"}))
         except websockets.ConnectionClosed:
@@ -95,13 +95,19 @@ class LyricsServer:
 
 
     def _execute_control(self, action, player_name):
-        """Execute playback control. Returns True on success, False on failure."""
+        """Execute playback control. Returns a JSON-serializable result."""
+        if action == "like":
+            return {
+                "success": False,
+                "action": action,
+                "error": "The active MPRIS player does not expose a like/favorite action."
+            }
         name = player_name or self.manager.playername
         if not name:
-            return False
+            return {"success": False, "action": action, "error": "No active player"}
         player = MprisPlayer(name)
         if not player or not player.obj:
-            return False
+            return {"success": False, "action": action, "error": "Player is unavailable"}
         actions = {
             "play": player.play,
             "pause": player.pause,
@@ -113,12 +119,12 @@ class LyricsServer:
             "quit": player.quit,
         }
         if action not in actions:
-            return False
+            return {"success": False, "action": action, "error": "Unknown action"}
         try:
             actions[action]()
-            return True
-        except Exception:
-            return False
+            return {"success": True, "action": action}
+        except Exception as e:
+            return {"success": False, "action": action, "error": str(e)}
 
 
     async def run(self):
