@@ -2,7 +2,7 @@
 
 This is an experimental Rust implementation of the Lyrics-on-Panel backend.
 It intentionally lives alongside the production Python backend in `../backend`
-and is not installed by the default `scripts/install-backend.sh` script.
+and can be selected through the main `scripts/install-backend.sh` script.
 
 ## Build and test
 
@@ -11,7 +11,15 @@ cargo test --locked
 cargo build --release --locked
 ```
 
-## Install from this checkout
+## Install
+
+Clone and install through the main installer:
+
+```bash
+./scripts/install-backend.sh rust
+```
+
+To build and install directly from the current checkout instead:
 
 ```bash
 ./scripts/install-local-rust-backend.sh

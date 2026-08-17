@@ -5,12 +5,14 @@ on:
     branches: [main]
     paths:
       - 'backend/**'
+      - 'backend-rust/**'
       - 'scripts/**'
       - '.github/workflows/test-arch.yml'
   pull_request:
     branches: [main]
     paths:
       - 'backend/**'
+      - 'backend-rust/**'
       - 'scripts/**'
   workflow_dispatch:
 
@@ -24,34 +26,37 @@ jobs:
       - name: Install system dependencies
         run: |
           pacman -Syu --noconfirm
-          pacman -S --needed --noconfirm base-devel cmake dbus git rust
+          pacman -S --needed --noconfirm base-devel cmake curl dbus git glib2 pkgconf rust
 
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Check formatting
-        working-directory: backend
-        run: cargo fmt --check
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Run tests
-        working-directory: backend
-        run: cargo test --locked
-
-      - name: Run Clippy
-        working-directory: backend
-        run: cargo clippy --locked -- -D warnings
-
-      - name: Build release backend
-        working-directory: backend
-        run: cargo build --release --locked
-
-      - name: Smoke test release backend
+      - name: Install Python backend dependencies
         working-directory: backend
         run: |
-          dbus-run-session -- bash -euo pipefail -c '
-            ./target/release/lyrics-on-panel-backend &
-            backend_pid=$!
-            trap "kill $backend_pid 2>/dev/null || true; wait $backend_pid 2>/dev/null || true" EXIT
-            sleep 2
-            kill -0 "$backend_pid"
-          '
+          source $HOME/.local/bin/env
+          uv venv --python 3.13.11
+          source .venv/bin/activate
+          uv pip install websockets==15.0.1 dbus-python==1.4.0
+
+      - name: Smoke test Python backend
+        working-directory: backend
+        run: |
+          source .venv/bin/activate
+          timeout 10 python src/server.py || [ $? -eq 124 ]
+
+      - name: Check Rust backend
+        working-directory: backend-rust
+        run: |
+          cargo fmt --check
+          cargo test --locked
+          cargo clippy --locked --all-targets --all-features -- -D warnings
+          cargo build --release --locked --all-features
+
+      - name: Check installer syntax
+        run: bash -n scripts/install-backend.sh scripts/uninstall-backend.sh scripts/install-local-rust-backend.sh

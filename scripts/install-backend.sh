@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -9,6 +9,7 @@ NC='\033[0m'
 REPO_URL="https://github.com/KangweiZhu/lyrics-on-panel"
 INSTALL_DIR="$HOME/.local/share/lyrics-on-panel"
 SERVICE_NAME="Universal-Mpris-LyricServer"
+BACKEND="${1:-}"
 
 echo -e "${GREEN}=== Lyrics-on-Panel Backend Installer ===${NC}"
 
@@ -17,54 +18,82 @@ if [ "$EUID" -eq 0 ]; then
     exit 1
 fi
 
-# Step 1: Install build dependencies for dbus-python
-# Todo: Debian / Nix / SUSE support
-echo -e "\n${YELLOW}[1/5] Installing system build dependencies...${NC}"
-sudo pacman -S --needed --noconfirm git curl dbus glib2 pkgconf base-devel
-
-# Step 2: Install uv
-echo -e "\n${YELLOW}[2/5] Setting up uv...${NC}"
-if ! command -v uv &>/dev/null; then
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-    export PATH="$HOME/.local/bin:$PATH"
+if [ -z "$BACKEND" ]; then
+    if [ -t 0 ]; then
+        echo "Select backend implementation:"
+        echo "  1) Python (default)"
+        echo "  2) Rust"
+        read -r -p "Choice [1]: " choice
+        case "$choice" in
+            ""|1) BACKEND="python" ;;
+            2) BACKEND="rust" ;;
+            *)
+                echo -e "${RED}Error: Invalid selection${NC}"
+                exit 1
+                ;;
+        esac
+    else
+        BACKEND="python"
+    fi
 fi
-echo -e "${GREEN}uv: $(uv --version)${NC}"
 
-# Step 3: Clone/update repository
-echo -e "\n${YELLOW}[3/5] Cloning project...${NC}"
+if [ "$BACKEND" != "python" ] && [ "$BACKEND" != "rust" ]; then
+    echo -e "${RED}Usage: $0 [python|rust]${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}Selected backend: $BACKEND${NC}"
+
+# Todo: Debian / Nix / SUSE support
+echo -e "\n${YELLOW}Installing system dependencies...${NC}"
+if [ "$BACKEND" = "python" ]; then
+    sudo pacman -S --needed --noconfirm git curl dbus glib2 pkgconf base-devel
+else
+    sudo pacman -S --needed --noconfirm git dbus base-devel cmake rust
+fi
+
+echo -e "\n${YELLOW}Cloning project...${NC}"
 rm -rf "$INSTALL_DIR"
 git clone "$REPO_URL" "$INSTALL_DIR"
 
-# Step 4: Create venv with Python 3.13 and install dependencies
-echo -e "\n${YELLOW}[4/5] Creating Python environment...${NC}"
-mkdir -p "$INSTALL_DIR/backend"
-cd "$INSTALL_DIR/backend"
+if [ "$BACKEND" = "python" ]; then
+    echo -e "\n${YELLOW}Setting up Python backend...${NC}"
+    if ! command -v uv &>/dev/null; then
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        export PATH="$HOME/.local/bin:$PATH"
+    fi
+    echo -e "${GREEN}uv: $(uv --version)${NC}"
 
-uv self update
-uv venv --python 3.13.11
-uv pip install websockets==15.0.1 dbus-python==1.4.0
+    cd "$INSTALL_DIR/backend"
+    uv self update
+    uv venv --python 3.13.11
+    uv pip install websockets==15.0.1 dbus-python==1.4.0
 
-# Create launcher
-cat > "$INSTALL_DIR/backend/run.sh" << 'EOF'
+    cat > "$INSTALL_DIR/backend/run.sh" << 'EOF'
 #!/bin/bash
 cd "$(dirname "$0")"
 source .venv/bin/activate
 exec python src/server.py
 EOF
-chmod +x "$INSTALL_DIR/backend/run.sh"
+    chmod +x "$INSTALL_DIR/backend/run.sh"
+    EXEC_START="$INSTALL_DIR/backend/run.sh"
+else
+    echo -e "\n${YELLOW}Building Rust backend...${NC}"
+    cargo build --release --locked --manifest-path "$INSTALL_DIR/backend-rust/Cargo.toml"
+    EXEC_START="$INSTALL_DIR/backend-rust/target/release/lyrics-on-panel-backend"
+fi
 
-# Step 5: Setup systemd service
-echo -e "\n${YELLOW}[5/5] Setting up systemd service...${NC}"
+echo -e "\n${YELLOW}Setting up systemd service...${NC}"
 mkdir -p "$HOME/.config/systemd/user"
 
 cat > "$HOME/.config/systemd/user/${SERVICE_NAME}.service" << EOF
 [Unit]
-Description=Lyrics-on-Panel MPRIS2 Backend
+Description=Lyrics-on-Panel MPRIS2 Backend ($BACKEND)
 After=graphical-session.target
 
 [Service]
 Type=simple
-ExecStart=$INSTALL_DIR/backend/run.sh
+ExecStart=$EXEC_START
 Restart=on-failure
 RestartSec=5
 
@@ -73,9 +102,11 @@ WantedBy=default.target
 EOF
 
 systemctl --user daemon-reload
-systemctl --user enable --now "${SERVICE_NAME}.service"
+systemctl --user enable "${SERVICE_NAME}.service"
+systemctl --user restart "${SERVICE_NAME}.service"
 
 echo -e "\n${GREEN}=== Installation Complete ===${NC}"
+echo "Implementation: $BACKEND"
 echo "Service: systemctl --user status ${SERVICE_NAME}"
 echo "Logs:    journalctl --user -u ${SERVICE_NAME} -f"
 echo "Backend: ws://127.0.0.1:23560"
