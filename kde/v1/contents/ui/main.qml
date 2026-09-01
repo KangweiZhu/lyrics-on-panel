@@ -227,20 +227,30 @@ PlasmoidItem {
     */
     Timer {
         id: positionTimer
-        interval: 1
+        interval: 100
         running: true
         repeat: true
         onTriggered: {
-            mpris2Model.currentPlayer.updatePosition();
+            var player = mpris2Model.currentPlayer;
+            if (player) {
+                player.updatePosition();
+            }
         }
     }
 
     Timer {
         id: schedulerTimer
-        interval: 1
+        interval: 100
         running: true
         repeat: true
         onTriggered: {
+            if (!currentMediaTitle && !currentMediaArtists) {
+                if ((previousMediaTitle || previousMediaArtists) && !metadataClearTimer.running) {
+                    metadataClearTimer.start();
+                }
+                return;
+            }
+            metadataClearTimer.stop();
             //log();
             /**
                 Use translator if you don't understand the comment... Too lazy to rewrite it in English.
@@ -254,7 +264,6 @@ PlasmoidItem {
                 重置后，重新判断当前预期的播放器是哪个。并且开启对应的timer（线程）
             */ 
             if (
-                !currentMediaTitle && !currentMediaArtists ||
                 mpris2PreviousPlayerIdentity != mpris2CurrentPlayerIdentity ||
                 prevExpectedPlayerIdentity != currExpectedPlayerIdentity ||
                 currentMediaTitle != previousMediaTitle || 
@@ -276,6 +285,18 @@ PlasmoidItem {
                         splayerTimer.start();
                     }
                 }
+            }
+        }
+    }
+
+    Timer {
+        id: metadataClearTimer
+        interval: 1000
+        repeat: false
+        onTriggered: {
+            if (!currentMediaTitle && !currentMediaArtists) {
+                reset();
+                lyricText.text = " ";
             }
         }
     }
@@ -327,7 +348,7 @@ PlasmoidItem {
     */
     Timer {
         id: compatibleModeTimer
-        interval: 200
+        interval: 500
         running: false
         repeat: true
         onTriggered: {
@@ -357,7 +378,7 @@ PlasmoidItem {
 
     Timer {
         id: lyricDisplayTimer
-        interval: 1
+        interval: 50
         running: false
         repeat: true
         onTriggered: { 
@@ -403,6 +424,14 @@ PlasmoidItem {
     property bool isLXLyricFound: false;
 
     property bool isSPlayerLyricFound: false;
+
+    property bool compatibleRequestInFlight: false;
+
+    property int compatibleRequestId: 0;
+
+    property bool splayerRequestInFlight: false;
+
+    property int splayerRequestId: 0;
 
     // Current Media Title (Song's name), default is empty string
     property string currentMediaTitle: mpris2Model.currentPlayer?.track ?? ""
@@ -596,16 +625,30 @@ PlasmoidItem {
     }
 
     function fetchMediaInfoSP() {
+        if (splayerRequestInFlight) {
+            return;
+        }
+        splayerRequestInFlight = true;
+        var requestId = ++splayerRequestId;
+        var requestTitle = currentMediaTitle;
+        var requestArtists = currentMediaArtists;
         var xhr = new XMLHttpRequest();
         xhr.open("GET", splayer_base_url + "/api/control/song-info");
         xhr.onreadystatechange = function() {
-            if (xhr.status === 200 && xhr.readyState === XMLHttpRequest.DONE) {
+            if (xhr.readyState !== XMLHttpRequest.DONE || requestId !== splayerRequestId) {
+                return;
+            }
+            splayerRequestInFlight = false;
+            if (requestTitle !== currentMediaTitle || requestArtists !== currentMediaArtists) {
+                return;
+            }
+            if (xhr.status === 200) {
                 var response = JSON.parse(xhr.responseText);
-                if (response && response.data && !response.data.lyricLoading) {
+                if (response && response.data && !response.data.lyricLoading && response.data.lrcData) {
                     parseSyncLyricSP(response.data.lrcData);
-                } else {
-                    lyricsWTimes.clear();
+                } else if (response && response.data && !response.data.lyricLoading) {
                     lyricText.text = lrc_not_exists;
+                    isSPlayerLyricFound = true;
                 }
             }
         };
@@ -689,18 +732,28 @@ PlasmoidItem {
 
     */
     function fetchLyricsCompatibleMode() {
-        if (currentMediaTitle === "Advertisement" || isCompatibleLRCFound) {
+        if (currentMediaTitle === "Advertisement" || isCompatibleLRCFound || compatibleRequestInFlight) {
             return;
         }
 
+        compatibleRequestInFlight = true;
+        var requestId = ++compatibleRequestId;
+        var requestTitle = currentMediaTitle;
+        var requestArtists = currentMediaArtists;
         var xhr = new XMLHttpRequest();
         xhr.open("GET", lrcQueryUrl);
         xhr.onreadystatechange = function() {
-            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+            if (xhr.readyState !== XMLHttpRequest.DONE || requestId !== compatibleRequestId) {
+                return;
+            }
+            compatibleRequestInFlight = false;
+            if (requestTitle !== currentMediaTitle || requestArtists !== currentMediaArtists) {
+                return;
+            }
+            if (xhr.status === 200) {
                 if (!xhr.responseText || xhr.responseText === "[]") {
                     needFallback = true;
                     previousLrcId = Number.MIN_VALUE;
-                    lyricsWTimes.clear();
                     lyricText.text = lrc_not_exists;
                 } else {
                     var response = JSON.parse(xhr.responseText);
@@ -714,22 +767,26 @@ PlasmoidItem {
                             {"id":18131162,"name":"Jar Of Love","trackName":"Jar Of Love","artistName":"Wanting 曲婉婷","albumName":"Everything In The World","duration":229.026667, xxxx}
                         ]
                     */
+                    var lyricFound = false;
                     for (var i = 0; i < response.length; i++) {
                         var responseItem = response[i]
                         if (previousLrcId !== responseItem.id.toString()) {
                             if (responseItem.syncedLyrics) {
-                                reset()
+                                lyricsWTimes.clear();
+                                prevNonEmptyLyric = "";
                                 previousLrcId = responseItem.id.toString();
                                 isCompatibleLRCFound = true;
                                 parseLyric(responseItem.syncedLyrics);
+                                lyricFound = true;
                                 break;
                             } 
                         }
                     }
 
-                    // If reached here, it means the lrc file is just broken or doesn't follow the standard format. No need to fallback again since actually we can retrieve it. 
-                    isCompatibleLRCFound = true;
-                    lyricText.text = lrc_not_exists;
+                    if (!lyricFound) {
+                        isCompatibleLRCFound = true;
+                        lyricText.text = lrc_not_exists;
+                    }
                 }
             }
         };
@@ -818,8 +875,7 @@ PlasmoidItem {
 
     function splayerHandler() {
         if (currentMediaArtists === "" && currentMediaTitle === "") {
-            lyricText.text = " ";
-            lyricsWTimes.clear();
+            return;
         } else {
             if (!isSPlayerLyricFound) {
                 fetchMediaInfoSP();
@@ -852,7 +908,10 @@ PlasmoidItem {
         prevNonEmptyLyric = "";
         previousLrcId = "";
         needFallback = false;
-        lyricText.text = " ";
+        compatibleRequestInFlight = false;
+        compatibleRequestId++;
+        splayerRequestInFlight = false;
+        splayerRequestId++;
         isCompatibleLRCFound = false;
         isYPMLyricFound = false;
         isLXLyricFound = false;
