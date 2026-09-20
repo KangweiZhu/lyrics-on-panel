@@ -25,6 +25,31 @@ jobs:
       id-token: write
       actions: read # Required for Claude to read CI results on PRs
     steps:
+      # Let the triggering comment choose the model, e.g.
+      #   @claude model=opus review this
+      #   @claude use sonnet for a quick pass
+      # Falls back to the action's default when no model is named.
+      # The body is passed through env, never interpolated into the script,
+      # so comment text cannot be executed as shell.
+      - name: Select model from the triggering text
+        id: pick
+        env:
+          BODY: >-
+            ${{ github.event.comment.body
+                || github.event.review.body
+                || github.event.issue.body }}
+        run: |
+          body=$(printf '%s' "$BODY" | tr '[:upper:]' '[:lower:]')
+          case "$body" in
+            *opus*)   args='--model claude-opus-5' ;;
+            *sonnet*) args='--model claude-sonnet-5' ;;
+            *fable*)  args='--model claude-fable-5-1' ;;
+            *haiku*)  args='--model claude-haiku-4-5-20251001' ;;
+            *)        args='' ;;
+          esac
+          echo "args=$args" >> "$GITHUB_OUTPUT"
+          echo "claude_args -> ${args:-(action default)}"
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -49,8 +74,8 @@ jobs:
           # Optional: Give a custom prompt to Claude. If this is not specified, Claude will perform the instructions specified in the comment that tagged it.
           # prompt: 'Update the pull request description to include a summary of changes.'
 
-          # Optional: Add claude_args to customize behavior and configuration
+          # Model chosen by the triggering comment; empty means the action default.
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options
-          # claude_args: '--allowed-tools Bash(gh pr *)'
+          claude_args: ${{ steps.pick.outputs.args }}
 
