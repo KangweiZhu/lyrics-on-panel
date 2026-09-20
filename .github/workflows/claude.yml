@@ -29,6 +29,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+          # Check out a detached HEAD rather than a real local branch.
+          # A fork PR opened from the fork's own `main` makes the action run
+          # `git fetch origin pull/<N>/head:main`, which git refuses while `main`
+          # is the branch checked out on the runner.
+          # See https://github.com/anthropics/claude-code-action/issues/1423
+          ref: ${{ github.sha }}
 
       - name: Run Claude Code
         id: claude
