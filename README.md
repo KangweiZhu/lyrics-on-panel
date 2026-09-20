@@ -52,9 +52,9 @@
      > Fetches lyrics of the currently playing music from the local port exposed by YesPlayMusic. 
 
   2. LX Music 模式 (LX Music Mode)  **[lx-music-desktop](https://github.com/lyswhut/lx-music-desktop)**
-       从 LX Music 暴露在本地的端口获取当前播放歌曲的歌词
+       v2 后端通过 LX Music 官方 Open API SSE 实时获取歌词。请先在 LX Music 中启用开放 API；端口沿用插件配置。
 
-     > Fetches lyrics of the currently playing music from the local port exposed by LX Music.
+     > The v2 backend uses LX Music's official Open API SSE stream. Enable the Open API in LX Music first; the port continues to use the widget setting.
 
   3. SPlayer 模式 (SPlayer Mode)  **[SPlayer](https://github.com/imsyy/SPlayer)**
        从 SPlayer 暴露在本地的端口获取当前播放歌曲的歌词
@@ -74,9 +74,9 @@
 
 #### KDE
 
-> 针对KDE Plasma， 我们提供两套版本，分别是纯QML实现以及前端QML后端Python。具体请见v1.4和v2.0的ChangeLog。
+> 针对 KDE Plasma，我们提供纯 QML 的 v1，以及 QML 前端配合后端的 v2。v2 可使用原有的 Python 后端（`backend/`）或独立的 Rust 实现（`backend-rust/`）。具体请见 v1.4 和 v2.0 的 ChangeLog。
 
->> For KDE Plasma, we provide two versions: a pure QML implementation and a QML frontend with Python backend. Please refer to the ChangeLog for v1.4 and v2.0 for details.
+>> For KDE Plasma, v1 is implemented in pure QML. The v2 QML frontend can use either the existing Python backend (`backend/`) or the separate Rust implementation (`backend-rust/`). Please refer to the v1.4 and v2.0 changelogs for details.
 
 当前仓库版本仅保证在 **KDE Plasma 6** 下工作。 如需要 **KDE Plasma5** 版本，请在 [**KDE Store**](https://store.kde.org/p/2138263) 或 [**Plasma5 分支**](https://github.com/KangweiZhu/lyrics-on-panel/tree/plasma5) 进行下载。
 
@@ -112,15 +112,24 @@ Plasma5版本是**可用但过时**的版本，许多在新版本加入的功能
 
 
 
-* ⚠️⚠️⚠️**v2需要额外的Python后端才能够工作。在 Arch Linux 下, 后端可以通过以下命令完成安装。**⚠️⚠️⚠️
+* ⚠️⚠️⚠️**v2 需要额外的后端才能工作。安装脚本支持选择 Python 或 Rust 实现。**⚠️⚠️⚠️
 
-  > Note that v2 (**a more flexible and precise mode**) requires an additional Python backend to make the frontend work. **Rest assured, the backend can be installed on Arch Linux with the following commands.**
+  > v2 requires an additional backend. The installer supports either the Python or Rust implementation.
 
   ```
   git clone git@github.com:KangweiZhu/lyrics-on-panel.git
   cd lyrics-on-panel
   chmod +x scripts/install-backend.sh
   ./scripts/install-backend.sh
+  ```
+
+  不带参数运行时可交互选择，默认为 Python。也可以直接指定：
+
+  > Run without an argument to choose interactively; Python is the default. You can also select an implementation directly:
+
+  ```bash
+  ./scripts/install-backend.sh python
+  ./scripts/install-backend.sh rust
   ```
 
 
