@@ -25,6 +25,10 @@ PluginComponent {
     property bool config_yesPlayMusicChecked: pluginData.playerMode === "yesplaymusic"
     property bool config_lxMusicChecked: pluginData.playerMode === "lxmusic"
     property bool config_spotifyChecked: pluginData.playerMode === "spotify"
+    readonly property string config_openOrpheusService: pluginData.openOrpheusInstallation === "flatpak"
+        ? "org.mpris.MediaPlayer2.io.github.yucling.open-orpheus"
+        : "org.mpris.MediaPlayer2.open-orpheus"
+    property bool config_openOrpheusChecked: pluginData.playerMode === "open-orpheus"
     property bool config_compatibleModeChecked: pluginData.playerMode === "global"
 
     property int config_lyricTextSize: pluginData.lyricTextSize ?? 12
@@ -66,7 +70,9 @@ PluginComponent {
         : (hasActivePlayer ? 1000 : 3000)
 
     property string requestedPlayer: {
-        if (selectedPlayer) {
+        if (config_openOrpheusChecked) {
+            return config_openOrpheusService
+        } else if (selectedPlayer) {
             return selectedPlayer
         } else if (config_yesPlayMusicChecked) {
             return "org.mpris.MediaPlayer2.yesplaymusic"
@@ -139,7 +145,7 @@ PluginComponent {
             }
 
             Image {
-                source: root.config_yesPlayMusicChecked ? root.cloudMusicIcon : root.spotifyIcon
+                source: (root.config_yesPlayMusicChecked || root.config_openOrpheusChecked) ? root.cloudMusicIcon : root.spotifyIcon
                 sourceSize.width: root.config_mediaControllItemSize
                 sourceSize.height: root.config_mediaControllItemSize
             }
@@ -315,7 +321,8 @@ PluginComponent {
         if (pollSocket.status === WebSocket.Open) {
             var request = {
                 "player": requestedPlayer || null,
-                "lxMusicPort": config_lxMusicPort
+                "lxMusicPort": config_lxMusicPort,
+                "globalMode": config_compatibleModeChecked
             }
             pollSocket.sendTextMessage(JSON.stringify(request))
         }
@@ -390,7 +397,7 @@ PluginComponent {
         }
         var request = {
             "action": action,
-            "player": currentPlayerBusName || requestedPlayer || null
+            "player": config_openOrpheusChecked ? requestedPlayer : (currentPlayerBusName || requestedPlayer || null)
         }
         controlSocket.sendTextMessage(JSON.stringify(request))
     }

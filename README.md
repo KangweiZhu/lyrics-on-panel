@@ -42,9 +42,9 @@
     * Apple Music
     * SPlayer
 
-* 根据歌曲信息，采用三套逻辑进行歌词抓取：  
+* 根据歌曲信息，采用以下逻辑进行歌词抓取：
 
-  > This plugin uses three approaches to fetch lyrics:
+  > This plugin uses the following approaches to fetch lyrics:
 
   1. YesPlayMusic模式 (YesPlayMusic Mode)  https://github.com/qier222/YesPlayMusic  
      从 YesPlayMusic 暴露在本地的端口获取当前播放歌曲的歌词。  
@@ -63,7 +63,12 @@
      > Fetches lyrics of the currently playing music from the local port exposed by SPlayer.
      > Only builds from version 2026.1.4 onwards are available.[3eda65d](https://github.com/imsyy/SPlayer/commit/3eda65dd89fdebade373f20b5890add6ac3ab3df)
 
-  4. 全局模式 (Global Mode)
+  4. Open Orpheus 模式 (Open Orpheus Mode) **[Open Orpheus](https://github.com/YUCLing/open-orpheus)**
+     通过 MPRIS2 获取歌曲 ID，从网易云官方接口获取歌词。请在 **Open Orpheus Installation** 中选择 **Native（普通安装）** 或 **Flatpak**。
+
+     > Fetches lyrics from the official NetEase API using the song ID from MPRIS2. Select **Native** or **Flatpak** under **Open Orpheus Installation**.
+
+  5. 全局模式 (Global Mode)
      从 [**LrcLib**](https://lrclib.net/) 歌词数据库中根据 **`歌手`、`曲名`、`专辑名`** 精确匹配歌词。若无匹配结果，则使用 **歌名** 模糊查询。  
   
      > Fetches lyrics from the [Lrclib](https://lrclib.net/) lyrics database by precisely matching the `artist`, `music(track) title`, and `album name`. If no result is found, then fallback to a fuzzy search using only the **song title**. 

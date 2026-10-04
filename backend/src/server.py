@@ -70,7 +70,7 @@ class LyricsServer:
                     requested_player = data.get("player")
                     lxmusic_port = data.get("lxMusicPort", 23330)
                     loop = asyncio.get_running_loop()
-                    state = await loop.run_in_executor(None, self.manager.poll_status, requested_player, lxmusic_port)
+                    state = await loop.run_in_executor(None, self.manager.poll_status, requested_player, lxmusic_port, data.get("globalMode"))
                     await websocket.send(json.dumps(state))
                 except json.JSONDecodeError:
                     await websocket.send(json.dumps({"error": "Invalid JSON"}))

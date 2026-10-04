@@ -8,6 +8,9 @@ import org.kde.plasma.plasmoid 2.0
 import org.kde.plasma.components 3.0 as PlasmaComponents
 import org.kde.plasma.plasma5support as Plasma5Support
 import org.kde.plasma.private.mpris as Mpris
+import org.kde.plasma.workspace.dbus as DBus
+import "DbusValues.js" as DbusValues
+import "LyricDisplay.js" as LyricDisplay
 
 
 /**
@@ -24,6 +27,45 @@ PlasmoidItem {
     Mpris.Mpris2Model {
         id: mpris2Model
     }
+
+    // Plasma's MPRIS model does not expose the raw track ID to QML.
+    readonly property string openOrpheusService: config_openOrpheusChecked
+        ? config_openOrpheusService
+        : ""
+
+    DBus.DBusServiceWatcher {
+        id: openOrpheusWatcher
+        busType: DBus.BusType.Session
+        watchedService: openOrpheusService
+        onRegisteredChanged: {
+            if (registered) openOrpheusProperties.updateAll();
+        }
+    }
+
+    DBus.Properties {
+        id: openOrpheusProperties
+        busType: DBus.BusType.Session
+        service: openOrpheusService
+        path: "/org/mpris/MediaPlayer2"
+        iface: "org.mpris.MediaPlayer2.Player"
+    }
+
+    readonly property var openOrpheusMetadata: openOrpheusWatcher.registered
+        ? DbusValues.dictionary(openOrpheusProperties.properties.Metadata) : ({})
+    readonly property string openOrpheusSongId: {
+        var metadata = openOrpheusMetadata;
+        var trackId = metadata ? String(metadata["mpris:trackid"] || "") : "";
+        var match = /^\/com\/163\/music\/([0-9]+)$/.exec(trackId);
+        return match && /[1-9]/.test(match[1]) ? match[1] : "";
+    }
+    property string previousOpenOrpheusSongId: ""
+    property var compatibleRequest: null
+    property double compatibleRetryAt: 0
+    property var openOrpheusRequest: null
+    property int openOrpheusGeneration: 0
+    property bool openOrpheusLyricsLoaded: false
+    property double openOrpheusRetryAt: 0
+    property string previousOpenOrpheusService: ""
 
     // Seems obsolete by KDE Plasma 6.
     Mpris.MultiplexerModel {
@@ -45,7 +87,8 @@ PlasmoidItem {
     Plasmoid.backgroundHints: PlasmaCore.Types.NoBackground | PlasmaCore.Types.ConfigurableBackground
 
     // Should ask uiYzzi if problem occurs.
-    Plasmoid.status: mpris2Model.currentPlayer?.canControl || !config_hideItemWhenNoControlChecked ? PlasmaCore.Types.ActiveStatus : PlasmaCore.Types.HiddenStatus;
+    Plasmoid.status: (config_openOrpheusChecked ? openOrpheusWatcher.registered : mpris2Model.currentPlayer?.canControl)
+        || !config_hideItemWhenNoControlChecked ? PlasmaCore.Types.ActiveStatus : PlasmaCore.Types.HiddenStatus;
 
     Text {
         id: lyricText
@@ -143,7 +186,7 @@ PlasmoidItem {
         Image {
             id: mediaPlayerIcon
             source: {
-                if (config_yesPlayMusicChecked) {
+                if (config_yesPlayMusicChecked || config_openOrpheusChecked) {
                     return cloudMusicIcon;
                 } else if (config_splayerChecked) {
                     return splayerIcon;
@@ -193,6 +236,10 @@ PlasmoidItem {
     property bool config_lxMusicChecked: Plasmoid.configuration.lxMusicChecked;
     property bool config_splayerChecked: Plasmoid.configuration.splayerChecked;
     property bool config_spotifyChecked: Plasmoid.configuration.spotifyChecked;
+    readonly property string config_openOrpheusService: Plasmoid.configuration.openOrpheusInstallation === 1
+        ? "org.mpris.MediaPlayer2.io.github.yucling.open-orpheus"
+        : "org.mpris.MediaPlayer2.open-orpheus"
+    property bool config_openOrpheusChecked: Plasmoid.configuration.openOrpheusChecked
     property bool config_compatibleModeChecked: Plasmoid.configuration.compatibleModeChecked;
 
     property int config_lyricTextSize: Plasmoid.configuration.lyricTextSize;
@@ -228,11 +275,27 @@ PlasmoidItem {
     Timer {
         id: positionTimer
         interval: 1
-        running: true
+        running: !config_openOrpheusChecked
         repeat: true
         onTriggered: {
-            mpris2Model.currentPlayer.updatePosition();
+            mpris2Model.currentPlayer?.updatePosition();
         }
+    }
+
+    Timer {
+        interval: 250
+        running: config_openOrpheusChecked && openOrpheusWatcher.registered
+        repeat: true
+        onTriggered: openOrpheusProperties.update("Position")
+    }
+
+    // A transient empty Metadata notification must not leave us waiting for
+    // another track change. Re-read it while the selected service is present.
+    Timer {
+        interval: 1000
+        running: openOrpheusWatcher.registered && !openOrpheusSongId
+        repeat: true
+        onTriggered: openOrpheusProperties.updateAll()
     }
 
     Timer {
@@ -246,7 +309,7 @@ PlasmoidItem {
                 Use translator if you don't understand the comment... Too lazy to rewrite it in English.
 
                 如果 
-                    1. mpris 里面，当前播放音乐的title和artists都为空, 则尝试重置。
+                    1. 元数据变化时重置；持续为空时不反复重置。
                     2. mpris 里面，当前播放器和之前的播放器不一样，就重置。
                     3. 设置 里面， 当前播放器和之前设置的播放器不一样(即更新了当前追踪的播放器),就重置。
                     4. 前后歌名，前后歌手不一样，重置。
@@ -254,11 +317,13 @@ PlasmoidItem {
                 重置后，重新判断当前预期的播放器是哪个。并且开启对应的timer（线程）
             */ 
             if (
-                !currentMediaTitle && !currentMediaArtists ||
                 mpris2PreviousPlayerIdentity != mpris2CurrentPlayerIdentity ||
                 prevExpectedPlayerIdentity != currExpectedPlayerIdentity ||
                 currentMediaTitle != previousMediaTitle || 
-                currentMediaArtists != previousMediaArtists
+                currentMediaArtists != previousMediaArtists ||
+                (config_openOrpheusChecked
+                    && (openOrpheusSongId !== previousOpenOrpheusSongId
+                        || openOrpheusService !== previousOpenOrpheusService))
             ){
                 reset();
                 if (currExpectedPlayerIdentity === "compatible" || currExpectedPlayerIdentity === "Spotify") {
@@ -275,7 +340,39 @@ PlasmoidItem {
                     if (mpris2CurrentPlayerIdentity === "SPlayer") {
                         splayerTimer.start();
                     }
+                } else if (currExpectedPlayerIdentity === "Open Orpheus") {
+                    if (mpris2CurrentPlayerIdentity === "Open Orpheus") {
+                        openOrpheusTimer.start();
+                    }
                 }
+            }
+        }
+    }
+
+    Timer {
+        id: openOrpheusTimer
+        interval: 1000
+        repeat: true
+        onTriggered: openOrpheusHandler()
+    }
+
+    Timer {
+        id: compatibleTimeout
+        interval: 5000
+        onTriggered: {
+            if (compatibleRequest) compatibleRequest.abort();
+            compatibleRequest = null;
+            compatibleRetryAt = Date.now() + 30000;
+        }
+    }
+
+    Timer {
+        id: openOrpheusTimeout
+        interval: 5000
+        onTriggered: {
+            if (openOrpheusRequest) {
+                openOrpheusRequest.abort();
+                openOrpheusRequest = null;
             }
         }
     }
@@ -336,21 +433,7 @@ PlasmoidItem {
                 reset();
                 // console.log("keeping reset()")
             } else {
-                if (mpris2CurrentPlayerIdentity === "YesPlayMusic") {
-                    // console.log("YPM Timer Triggered");
-                    ypmHandler();
-                } else if (mpris2CurrentPlayerIdentity === "lx-music-desktop") {
-                    // console.log("lx music triggered")
-                    lxHandler();
-                } else if (mpris2CurrentPlayerIdentity === "SPlayer") {
-                    // console.log("splayer triggered")
-                    splayerHandler();
-                } else {
-                    if (!isCompatibleLRCFound || needFallback) {
-                        //console.log("spotify compatible mode triggered")
-                        fetchLyricsCompatibleMode();
-                    }
-                }
+                fetchLyricsCompatibleMode();
             }
         }
     }
@@ -368,20 +451,9 @@ PlasmoidItem {
                 if (currentMediaTitle === "Advertisement") {
                     lyricText.text = currentMediaTitle;
                 } else {
-                    for (let i = 0; i < lyricsWTimes.count; i++) {
-                        if (lyricsWTimes.get(i).time >= mprisCurrentPlayingSongTimeMS) {
-                            currentLyricIndex = i > 0 ? i - 1 : 0;
-                            var currentLWT = lyricsWTimes.get(currentLyricIndex);
-                            var currentLyric = currentLWT.lyric;
-                            if (!currentLWT || !currentLyric || currentLyric === "" && prevNonEmptyLyric != "") {
-                                lyricText.text = prevNonEmptyLyric;
-                            } else {
-                                lyricText.text = currentLyric;
-                                prevNonEmptyLyric = currentLyric;
-                            }
-                            break;
-                        }
-                    }
+                    var isOpenOrpheus = config_openOrpheusChecked;
+                    var ready = !isOpenOrpheus || (openOrpheusSongId !== "" && openOrpheusLyricsLoaded);
+                    lyricText.text = LyricDisplay.displayText(lyricsWTimes, position, ready, lrc_not_exists);
                 }
             }
         }
@@ -405,30 +477,39 @@ PlasmoidItem {
     property bool isSPlayerLyricFound: false;
 
     // Current Media Title (Song's name), default is empty string
-    property string currentMediaTitle: mpris2Model.currentPlayer?.track ?? ""
+    property string currentMediaTitle: config_openOrpheusChecked
+        ? (openOrpheusMetadata["xesam:title"] || "") : (mpris2Model.currentPlayer?.track ?? "")
 
     // Current Media Artists (Song's artist), default is empty string
-    property string currentMediaArtists: mpris2Model.currentPlayer?.artist ?? ""
+    property string currentMediaArtists: config_openOrpheusChecked
+        ? String(openOrpheusMetadata["xesam:artist"] || "") : (mpris2Model.currentPlayer?.artist ?? "")
 
     // Current Media Album (Song's album), default is empty string
-    property string currentMediaAlbum: mpris2Model.currentPlayer?.album ?? ""
+    property string currentMediaAlbum: config_openOrpheusChecked
+        ? (openOrpheusMetadata["xesam:album"] || "") : (mpris2Model.currentPlayer?.album ?? "")
 
     // Current Media Playback Status (Song's playback status), default is 0
-    property int playbackStatus: mpris2Model.currentPlayer?.playbackStatus ?? -1
+    property int playbackStatus: config_openOrpheusChecked
+        ? (DbusValues.scalar(openOrpheusProperties.properties.PlaybackStatus, "Stopped") === "Playing"
+            ? Mpris.PlaybackStatus.Playing : Mpris.PlaybackStatus.Paused)
+        : (mpris2Model.currentPlayer?.playbackStatus ?? -1)
 
     // Retrieve if the current media is playing (Unused)
     property bool isPlaying: root.playbackStatus === Mpris.PlaybackStatus.Playing
 
     // Retrieve the identity of current music/media player
     // YesPlayMusic Spotify lx-music-desktop xxx
-    property string mpris2CurrentPlayerIdentity: mpris2Model.currentPlayer?.identity ?? ""
+    property string mpris2CurrentPlayerIdentity: config_openOrpheusChecked
+        ? (openOrpheusWatcher.registered ? "Open Orpheus" : "") : (mpris2Model.currentPlayer?.identity ?? "")
         
     // Retrieve the current media position (in microseconds)
-    property int position: mpris2Model.currentPlayer?.position ?? 0
+    property double position: config_openOrpheusChecked
+        ? DbusValues.number(openOrpheusProperties.properties.Position) : (mpris2Model.currentPlayer?.position ?? 0)
 
 
     // Retrieve the current media length (in microseconds)
-    property double length: mpris2Model.currentPlayer?.length ?? 0
+    property double length: config_openOrpheusChecked
+        ? DbusValues.number(openOrpheusMetadata["mpris:length"]) : (mpris2Model.currentPlayer?.length ?? 0)
 
     /**
         A list of dictionaries. Each dictionary contains a timestamp and the corresponding lyric. Below is an example
@@ -444,7 +525,7 @@ PlasmoidItem {
     }
 
     // Other Media Player's mpris2 data
-    property int mprisCurrentPlayingSongTimeMS: {
+    property double mprisCurrentPlayingSongTimeMS: {
         if (position == 0) {
             return -1;
         } else {
@@ -479,7 +560,9 @@ PlasmoidItem {
     property string prevExpectedPlayerIdentity: "";
 
     property string currExpectedPlayerIdentity: {
-        if (config_yesPlayMusicChecked) {
+        if (config_openOrpheusChecked) {
+            return "Open Orpheus";
+        } else if (config_yesPlayMusicChecked) {
             return "YesPlayMusic";
         } else if (config_spotifyChecked) {
             return "Spotify";
@@ -495,9 +578,7 @@ PlasmoidItem {
     // Construct the lrclib's request url
     property string lrcQueryUrl: {
         if (needFallback) { // 如果失败了就用歌名做一次模糊查询。lrclib只支持模糊查询一个field.所以只能专辑|歌手名|歌名选一个， 很明显歌名的结果最准确。
-            return lrclib_base_url + "/api/search" + "?track_name=" + encodeURIComponent(currentMediaTitle) + 
-                  "&artist_name=" + encodeURIComponent(currentMediaArtists) + "&album_name=" + encodeURIComponent(currentMediaAlbum) + "&q=" 
-                  + encodeURIComponent(currentMediaTitle);
+            return lrclib_base_url + "/api/search?q=" + encodeURIComponent(currentMediaTitle);
         } else { // accruate matching
             return lrclib_base_url + "/api/search" + "?track_name=" + encodeURIComponent(currentMediaTitle) + 
                   "&artist_name=" + encodeURIComponent(currentMediaArtists) + "&album_name=" + encodeURIComponent(currentMediaAlbum);
@@ -511,7 +592,7 @@ PlasmoidItem {
         } else if (currentMediaTitle && !currentMediaArtists) {
             return currentMediaTitle;
         } else {
-            return "This song doesn't contain any lyric/title/artist.";
+            return "";
         }
     }
 
@@ -689,53 +770,48 @@ PlasmoidItem {
 
     */
     function fetchLyricsCompatibleMode() {
-        if (currentMediaTitle === "Advertisement" || isCompatibleLRCFound) {
-            return;
-        }
+        if (currentMediaTitle === "Advertisement" || isCompatibleLRCFound
+                || compatibleRequest || Date.now() < compatibleRetryAt) return;
 
+        var generation = openOrpheusGeneration;
+        var fuzzy = needFallback;
         var xhr = new XMLHttpRequest();
+        compatibleRequest = xhr;
         xhr.open("GET", lrcQueryUrl);
         xhr.onreadystatechange = function() {
-            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-                if (!xhr.responseText || xhr.responseText === "[]") {
+            if (xhr.readyState !== XMLHttpRequest.DONE) return;
+            if (generation !== openOrpheusGeneration || config_openOrpheusChecked) return;
+            compatibleTimeout.stop();
+            compatibleRequest = null;
+            if (xhr.status !== 200) {
+                compatibleRetryAt = Date.now() + 30000;
+                return;
+            }
+            try {
+                var response = JSON.parse(xhr.responseText);
+                for (var i = 0; i < response.length; i++) {
+                    if (response[i].syncedLyrics) {
+                        lyricsWTimes.clear();
+                        isCompatibleLRCFound = true;
+                        previousLrcId = String(response[i].id);
+                        parseLyric(response[i].syncedLyrics);
+                        return;
+                    }
+                }
+                if (!fuzzy) {
                     needFallback = true;
-                    previousLrcId = Number.MIN_VALUE;
+                } else {
+                    isCompatibleLRCFound = true;
                     lyricsWTimes.clear();
                     lyricText.text = lrc_not_exists;
-                } else {
-                    var response = JSON.parse(xhr.responseText);
-
-                    /**
-                        Fix: LrcLib might return multiple result for the same [track_name, artist_name, album_name], some of the result doesn't contain the syncedLyrics field.
-
-                        An example could be as listed below
-                        [
-                            {"id":13957,"name":"Jar Of Love","trackName":"Jar Of Love","artistName":"Wanting","albumName":"Everything In The World", xxx},
-                            {"id":18131162,"name":"Jar Of Love","trackName":"Jar Of Love","artistName":"Wanting 曲婉婷","albumName":"Everything In The World","duration":229.026667, xxxx}
-                        ]
-                    */
-                    for (var i = 0; i < response.length; i++) {
-                        var responseItem = response[i]
-                        if (previousLrcId !== responseItem.id.toString()) {
-                            if (responseItem.syncedLyrics) {
-                                reset()
-                                previousLrcId = responseItem.id.toString();
-                                isCompatibleLRCFound = true;
-                                parseLyric(responseItem.syncedLyrics);
-                                break;
-                            } 
-                        }
-                    }
-
-                    // If reached here, it means the lrc file is just broken or doesn't follow the standard format. No need to fallback again since actually we can retrieve it. 
-                    isCompatibleLRCFound = true;
-                    lyricText.text = lrc_not_exists;
                 }
+            } catch (error) {
+                compatibleRetryAt = Date.now() + 30000;
             }
         };
         xhr.send();
+        compatibleTimeout.start();
     }
- 
 
     function log() {
         console.log("currentMediaArtists: ", currentMediaArtists);
@@ -758,24 +834,28 @@ PlasmoidItem {
     }
 
     function previous() {
+        if (config_openOrpheusChecked) return controlOpenOrpheus("Previous");
         if (!isWrongPlayer()) {
            mpris2Model.currentPlayer.Previous(); 
         }
     }
 
     function play() {
+        if (config_openOrpheusChecked) return controlOpenOrpheus("Play");
         if (!isWrongPlayer()) {
            mpris2Model.currentPlayer.Play(); 
         }
     }
 
     function pause() {
+        if (config_openOrpheusChecked) return controlOpenOrpheus("Pause");
         if (!isWrongPlayer()) {
             mpris2Model.currentPlayer.Pause();
         }
     }
 
     function next() {
+        if (config_openOrpheusChecked) return controlOpenOrpheus("Next");
         if (!isWrongPlayer()) {
             mpris2Model.currentPlayer.Next();
         }
@@ -791,6 +871,53 @@ PlasmoidItem {
             }
         } 
         return false;
+    }
+
+    function controlOpenOrpheus(action) {
+        if (!openOrpheusWatcher.registered) return;
+        DBus.SessionBus.asyncCall({
+            service: openOrpheusService,
+            path: "/org/mpris/MediaPlayer2",
+            iface: "org.mpris.MediaPlayer2.Player",
+            member: action
+        });
+    }
+
+    function openOrpheusHandler() {
+        if (!config_openOrpheusChecked || !openOrpheusSongId || openOrpheusRequest || openOrpheusLyricsLoaded
+                || Date.now() < openOrpheusRetryAt) {
+            return;
+        }
+        var songId = openOrpheusSongId;
+        var generation = openOrpheusGeneration;
+        var xhr = new XMLHttpRequest();
+        openOrpheusRequest = xhr;
+        openOrpheusRetryAt = Date.now() + 30000;
+        xhr.open("GET", "https://music.163.com/api/song/lyric?id=" + songId
+                 + "&os=pc&lv=-1&kv=-1&tv=-1&yv=-1&rv=-1");
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState !== XMLHttpRequest.DONE) return;
+            if (generation !== openOrpheusGeneration || songId !== openOrpheusSongId
+                    || mpris2CurrentPlayerIdentity !== "Open Orpheus") return;
+            openOrpheusTimeout.stop();
+            openOrpheusRequest = null;
+            if (xhr.status !== 200) return;
+            try {
+                var response = JSON.parse(xhr.responseText);
+                if (response.code !== 200) return;
+                openOrpheusLyricsLoaded = true;
+                lyricsWTimes.clear();
+                if (response.lrc && typeof response.lrc.lyric === "string" && response.lrc.lyric) {
+                    parseLyric(response.lrc.lyric);
+                } else {
+                    lyricText.text = lrc_not_exists;
+                }
+            } catch (error) {
+                console.log("Invalid Open Orpheus lyric response:", error);
+            }
+        };
+        xhr.send();
+        openOrpheusTimeout.start();
     }
 
     function ypmHandler() {
@@ -840,6 +967,19 @@ PlasmoidItem {
         10. Set isYPMLyricFound to false, meaning that we haven't found the lyric yet(From YPM, YPM mode only).
     */
     function reset() {
+        openOrpheusGeneration++;
+        compatibleTimeout.stop();
+        if (compatibleRequest) compatibleRequest.abort();
+        compatibleRequest = null;
+        compatibleRetryAt = 0;
+        openOrpheusTimer.stop();
+        openOrpheusTimeout.stop();
+        if (openOrpheusRequest) openOrpheusRequest.abort();
+        openOrpheusRequest = null;
+        openOrpheusLyricsLoaded = false;
+        openOrpheusRetryAt = 0;
+        previousOpenOrpheusSongId = openOrpheusSongId;
+        previousOpenOrpheusService = openOrpheusService;
         compatibleModeTimer.stop();
         yesPlayMusicTimer.stop();
         lxMusicTimer.stop();
