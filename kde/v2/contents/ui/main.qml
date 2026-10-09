@@ -185,7 +185,7 @@ PlasmoidItem {
 
             Image {
                 id: mediaPlayerIcon
-                source: config_yesPlayMusicChecked ? cloudMusicIcon : spotifyIcon
+                source: (config_yesPlayMusicChecked || config_openOrpheusChecked) ? cloudMusicIcon : spotifyIcon
                 sourceSize.width: config_mediaControllItemSize
                 sourceSize.height: config_mediaControllItemSize
 
@@ -270,6 +270,10 @@ PlasmoidItem {
     property bool config_yesPlayMusicChecked: Plasmoid.configuration.yesPlayMusicChecked
     property bool config_lxMusicChecked: Plasmoid.configuration.lxMusicChecked
     property bool config_spotifyChecked: Plasmoid.configuration.spotifyChecked
+    readonly property string config_openOrpheusService: Plasmoid.configuration.openOrpheusInstallation === 1
+        ? "org.mpris.MediaPlayer2.io.github.yucling.open-orpheus"
+        : "org.mpris.MediaPlayer2.open-orpheus"
+    property bool config_openOrpheusChecked: Plasmoid.configuration.openOrpheusChecked
     property bool config_compatibleModeChecked: Plasmoid.configuration.compatibleModeChecked
 
     property int config_lyricTextSize: Plasmoid.configuration.lyricTextSize
@@ -310,7 +314,9 @@ PlasmoidItem {
     property int animationDuration: Math.max(2000, Math.abs((lyricTextContainer.width - lyricTextMetrics.width) / 50 * 1000))
 
     property string requestedPlayer: {
-        if (selectedPlayer) {
+        if (config_openOrpheusChecked) {
+            return config_openOrpheusService
+        } else if (selectedPlayer) {
             return selectedPlayer
         } else if (config_yesPlayMusicChecked) {
             return "org.mpris.MediaPlayer2.yesplaymusic"
@@ -394,7 +400,8 @@ PlasmoidItem {
         if (pollSocket.status === WebSocket.Open) {
             var request = {
                 "player": requestedPlayer || null,
-                "lxMusicPort": config_lxMusicPort
+                "lxMusicPort": config_lxMusicPort,
+                "globalMode": config_compatibleModeChecked
             }
             pollSocket.sendTextMessage(JSON.stringify(request))
         }
@@ -469,7 +476,7 @@ PlasmoidItem {
         }
         var request = {
             "action": action,
-            "player": currentPlayerBusName || requestedPlayer || null
+            "player": config_openOrpheusChecked ? requestedPlayer : (currentPlayerBusName || requestedPlayer || null)
         }
         controlSocket.sendTextMessage(JSON.stringify(request))
     }

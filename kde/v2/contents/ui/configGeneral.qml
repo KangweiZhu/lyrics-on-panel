@@ -4,14 +4,17 @@ import org.kde.kirigami 2.4 as Kirigami
 import org.kde.kquickcontrols 2.0 as KQControls
 import org.kde.plasma.core 2.0 as PlasmaCore
 import QtQuick.Layouts 1.0 as QQLayouts
+import org.kde.kcmutils as KCM
 
-Kirigami.FormLayout {
+KCM.SimpleKCM {
     id: generalPage
+    title: i18n("General")
     signal configurationChanged
 
     property alias cfg_yesPlayMusicChecked: yesPlayMusicPropriataryRadioButton.checked 
     property alias cfg_spotifyChecked: spotifyPropriataryRadioButton.checked  
     property alias cfg_lxMusicChecked: lxMusicPropriataryRadioButton.checked   
+    property alias cfg_openOrpheusChecked: openOrpheusRadioButton.checked
     property alias cfg_compatibleModeChecked: compatibleModeRadioButton.checked
 
     property alias cfg_lyricTextSize: lyricTextSizeSpinBox.value 
@@ -28,117 +31,132 @@ Kirigami.FormLayout {
 
     property alias cfg_preferedWidgetWidth: preferedWidgetWidthTextField.text
     property alias cfg_hideItemWhenNoControlChecked: hideItemWhenNoControlChecked.checked
+    property alias cfg_openOrpheusInstallation: openOrpheusInstallationComboBox.currentIndex
     property alias cfg_lxMusicPort: lxMusicPortTextField.text
 
-    QQC2.RadioButton {
-        id: yesPlayMusicPropriataryRadioButton
-        Kirigami.FormData.label: i18n("Modes: ")
-        text: i18n("YesPlayMusic(YPM)")
-    }
+    Kirigami.FormLayout {
+        QQC2.RadioButton {
+            id: yesPlayMusicPropriataryRadioButton
+            Kirigami.FormData.label: i18n("Modes: ")
+            text: i18n("YesPlayMusic(YPM)")
+        }
 
-    QQC2.RadioButton {
-        id: spotifyPropriataryRadioButton
-        text: i18n("Spotify")
-    }
+        QQC2.RadioButton {
+            id: spotifyPropriataryRadioButton
+            text: i18n("Spotify")
+        }
 
-    QQC2.RadioButton {
-        id: lxMusicPropriataryRadioButton
-        text: i18n("LX Music")
-    }
+        QQC2.RadioButton {
+            id: lxMusicPropriataryRadioButton
+            text: i18n("LX Music")
+        }
 
-    QQC2.RadioButton {
-        id: compatibleModeRadioButton
-        text: i18n("Global Mode")
-    }
+        QQC2.RadioButton {
+            id: openOrpheusRadioButton
+            text: i18n("Open Orpheus")
+        }
 
-    QQC2.SpinBox {
-        id: lyricTextSizeSpinBox
-        Kirigami.FormData.label: i18n("Lyric text size: ")
-    }
+        QQC2.RadioButton {
+            id: compatibleModeRadioButton
+            text: i18n("Global Mode")
+        }
 
-    QQC2.SpinBox {
-        id: lyricTextVerticalOffsetSpinBox
-        Kirigami.FormData.label: i18n("Lyric text vertical offset: ")
-    }
+        QQC2.SpinBox {
+            id: lyricTextSizeSpinBox
+            Kirigami.FormData.label: i18n("Lyric text size: ")
+        }
 
-    QQLayouts.RowLayout {
-        Kirigami.FormData.label: i18n("Lyric text alignment: ")
-        
+        QQC2.SpinBox {
+            id: lyricTextVerticalOffsetSpinBox
+            Kirigami.FormData.label: i18n("Lyric text vertical offset: ")
+        }
+
+        QQLayouts.RowLayout {
+            Kirigami.FormData.label: i18n("Lyric text alignment: ")
+
+            QQC2.ComboBox {
+                id: lyricTextAlignmentComboBox
+                model: [i18n("Left"), i18n("Center"), i18n("Right")]
+                currentIndex: 2
+            }
+        }
+
+        QQC2.SpinBox {
+            id: mediaControllSpacingSpinBox
+            Kirigami.FormData.label: i18n("Media control items spacing: ")
+        }
+
+        QQC2.SpinBox {
+            id: mediaControllItemSizeSpinBox
+            Kirigami.FormData.label: i18n("Media control items size: ")
+        }
+
+        QQC2.SpinBox {
+            id: mediaControllItemVerticalOffsetSpinBox
+            Kirigami.FormData.label: i18n("Media control items vertical offset: ")
+        }
+
+        QQLayouts.RowLayout {
+            Kirigami.FormData.label: i18n("Lyric text color: ")
+
+            KQControls.ColorButton {
+                id: lyricTextColorButton
+            }
+
+            QQC2.Button {
+                id: boldButton
+                QQC2.ToolTip {
+                    text: i18n("Bold text")
+                }
+                icon.name: "format-text-bold"
+                checkable: true
+            }
+
+            QQC2.Button {
+                id: italicButton
+                QQC2.ToolTip {
+                    text: i18n("Italic text")
+                }
+                icon.name: "format-text-italic"
+                checkable: true
+            }
+        }
+
+        QQC2.CheckBox {
+            id: whiteMediaControlIconsChecked
+            Kirigami.FormData.label: i18n("White Media Control Icons: ")
+            checkable: true
+        }
+
+        QQC2.TextField {
+            id: preferedWidgetWidthTextField
+            Kirigami.FormData.label: i18n("Prefered Widget Width: ")
+        }
+
+        QQC2.CheckBox {
+            id: hideItemWhenNoControlChecked
+            Kirigami.FormData.label: i18n("Hide Item When No Media Control: ")
+            checkable: true
+        }
+
         QQC2.ComboBox {
-            id: lyricTextAlignmentComboBox
-            model: [i18n("Left"), i18n("Center"), i18n("Right")]
-            currentIndex: 2
-        }
-    }
-
-    QQC2.SpinBox {
-        id: mediaControllSpacingSpinBox
-        Kirigami.FormData.label: i18n("Media control items spacing: ")
-    }
-
-    QQC2.SpinBox {
-        id: mediaControllItemSizeSpinBox
-        Kirigami.FormData.label: i18n("Media control items size: ")
-    }
-
-    QQC2.SpinBox {
-        id: mediaControllItemVerticalOffsetSpinBox
-        Kirigami.FormData.label: i18n("Media control items vertical offset: ")
-    }
-    
-    QQLayouts.RowLayout {
-        Kirigami.FormData.label: i18n("Lyric text color: ")
-
-        KQControls.ColorButton {
-            id: lyricTextColorButton
+            id: openOrpheusInstallationComboBox
+            Kirigami.FormData.label: i18n("Open Orpheus Installation: ")
+            model: [i18n("Native"), i18n("Flatpak")]
+            enabled: openOrpheusRadioButton.checked
         }
 
-        QQC2.Button {
-            id: boldButton
-            QQC2.ToolTip {
-                text: i18n("Bold text")
-            }
-            icon.name: "format-text-bold"
-            checkable: true
+        QQC2.TextField {
+            id: lxMusicPortTextField
+            Kirigami.FormData.label: i18n("LX Music Local Port: ")
+            enabled: lxMusicPropriataryRadioButton.checked
         }
 
-        QQC2.Button {
-            id: italicButton
-            QQC2.ToolTip {
-                text: i18n("Italic text")
-            }
-            icon.name: "format-text-italic"
-            checkable: true
-        }
+        // trackName	true	string	Title of the track
+        // artistName	true	string	Track's artist name
+        // albumName	true	string	Track's album name
+        // duration	true	number	Track's duration
+        // plainLyrics	true	string	Plain lyrics for the track
+        // syncedLyrics	true	string	Synchronized lyrics for the track
     }
-
-    QQC2.CheckBox {
-        id: whiteMediaControlIconsChecked
-        Kirigami.FormData.label: i18n("White Media Control Icons: ")
-        checkable: true
-    }
-
-    QQC2.TextField {
-        id: preferedWidgetWidthTextField
-        Kirigami.FormData.label: i18n("Prefered Widget Width: ")
-    }
-
-    QQC2.CheckBox {
-        id: hideItemWhenNoControlChecked
-        Kirigami.FormData.label: i18n("Hide Item When No Media Control: ")
-        checkable: true
-    }
-
-    QQC2.TextField {
-        id: lxMusicPortTextField
-        Kirigami.FormData.label: i18n("LX Music Local Port: ")
-        enabled: lxMusicPropriataryRadioButton.checked
-    }
-
-    // trackName	true	string	Title of the track
-    // artistName	true	string	Track's artist name
-    // albumName	true	string	Track's album name
-    // duration	true	number	Track's duration
-    // plainLyrics	true	string	Plain lyrics for the track
-    // syncedLyrics	true	string	Synchronized lyrics for the track
-}   
+}

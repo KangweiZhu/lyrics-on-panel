@@ -18,7 +18,7 @@ use tokio::sync::{RwLock, Semaphore};
 
 use crate::{
     lxmusic::LxMusicManager,
-    lyrics::{current_lyric, LyricsManager},
+    lyrics::{current_lyric, is_open_orpheus, LyricsManager},
     model::{
         LyricsResponse, PlaybackStatus, PlayerResponse, PlayerState, PollState, TrackResponse,
     },
@@ -124,6 +124,9 @@ async fn poll_socket(mut socket: WebSocket, state: AppState) {
                 continue;
             }
         };
+        let global_mode = request
+            .global_mode
+            .unwrap_or_else(|| request.player.as_deref().is_none_or(str::is_empty));
         let players = state.registry.snapshot().await;
         let available_players = players
             .iter()
@@ -136,7 +139,7 @@ async fn poll_socket(mut socket: WebSocket, state: AppState) {
         let response = match selected {
             Some(player) => {
                 let position_us = player.position_us(Instant::now());
-                let current_lyric = if player.identity == "lx-music-desktop" {
+                let current_lyric = if !global_mode && player.identity == "lx-music-desktop" {
                     state
                         .lxmusic
                         .current_lyric(
@@ -148,7 +151,7 @@ async fn poll_socket(mut socket: WebSocket, state: AppState) {
                 } else {
                     state
                         .lyrics
-                        .get_or_schedule(player)
+                        .get_or_schedule(player, global_mode)
                         .await
                         .as_deref()
                         .and_then(|lines| current_lyric(lines, position_us))
@@ -200,6 +203,8 @@ fn select_player<'a>(
             players
                 .iter()
                 .find(|player| player.identity == "lx-music-desktop")
+        } else if requested == "open-orpheus" {
+            players.iter().find(|player| is_open_orpheus(player))
         } else {
             players.iter().find(|player| player.bus_name == requested)
         };
@@ -335,6 +340,8 @@ async fn send_json(
 
 #[derive(Deserialize)]
 struct PollRequest {
+    #[serde(rename = "globalMode")]
+    global_mode: Option<bool>,
     player: Option<String>,
     #[serde(rename = "lxMusicPort")]
     lx_music_port: Option<u16>,
@@ -408,6 +415,60 @@ mod tests {
             .bus_name,
             "org.mpris.MediaPlayer2.chromium.instance"
         );
+    }
+
+    #[test]
+    fn open_orpheus_selection_supports_native_and_flatpak_and_stays_strict() {
+        for bus in [
+            "org.mpris.MediaPlayer2.open-orpheus",
+            "org.mpris.MediaPlayer2.io.github.yucling.open-orpheus",
+        ] {
+            let players = vec![
+                player(
+                    "org.mpris.MediaPlayer2.spotify",
+                    "Spotify",
+                    PlaybackStatus::Playing,
+                ),
+                player(bus, "Open Orpheus", PlaybackStatus::Paused),
+            ];
+            assert_eq!(
+                select_player(&players, Some("open-orpheus"), &mut None)
+                    .unwrap()
+                    .bus_name,
+                bus
+            );
+            assert_eq!(
+                select_control_player(&players, Some("open-orpheus"), None)
+                    .unwrap()
+                    .bus_name,
+                bus
+            );
+        }
+        let players = vec![player("other", "Other", PlaybackStatus::Playing)];
+        assert!(select_player(&players, Some("open-orpheus"), &mut None).is_none());
+    }
+
+    #[test]
+    fn explicit_open_orpheus_service_selects_exact_instance() {
+        let native = "org.mpris.MediaPlayer2.open-orpheus";
+        let flatpak = "org.mpris.MediaPlayer2.io.github.yucling.open-orpheus";
+        let players = vec![
+            player(native, "Open Orpheus", PlaybackStatus::Playing),
+            player(flatpak, "Open Orpheus", PlaybackStatus::Paused),
+        ];
+        assert_eq!(
+            select_player(&players, Some(flatpak), &mut None)
+                .unwrap()
+                .bus_name,
+            flatpak
+        );
+        assert_eq!(
+            select_control_player(&players, Some(flatpak), Some(native))
+                .unwrap()
+                .bus_name,
+            flatpak
+        );
+        assert!(select_player(&players[1..], Some(native), &mut None).is_none());
     }
 
     #[test]

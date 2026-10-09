@@ -1,11 +1,28 @@
 import json
+import re
 import threading
+import time
 from pathlib import Path
 import urllib.request
 from urllib.parse import quote, unquote, urlencode, urlparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from mpris_prober import find_players, find_playing_players
 from mpris_player import MprisPlayer, PlaybackStatus
+
+
+def is_open_orpheus(playername, identity):
+    return identity == 'Open Orpheus' or playername in (
+        'org.mpris.MediaPlayer2.open-orpheus',
+        'org.mpris.MediaPlayer2.io.github.yucling.open-orpheus',
+    )
+
+
+def open_orpheus_song_id(track_info):
+    match = re.fullmatch(r'/com/163/music/([0-9]+)', track_info.get('track_id', ''))
+    if match and match[1].strip('0'):
+        return match[1]
+    return None
+
 
 class LyricsManager:
     """
@@ -34,9 +51,13 @@ class LyricsManager:
         self.playback_status = playback_status
         self.position_ms = position_ms
         self.available_players = available_players or []
+        if playerobj is None:
+            self._track_key = None
+            self._retry_at = 0
+            self._fetch_id += 1
     
     
-    def poll_status(self, requested_playername=None, lxmusic_port=23330):
+    def poll_status(self, requested_playername=None, lxmusic_port=23330, global_mode=None):
         """
         Polls for player changes and state updates.
         
@@ -48,6 +69,8 @@ class LyricsManager:
             requested_playername (str, optional): The specific DBus name to track (e.g. 'org.mpris.MediaPlayer2.spotify').
                                              If None, defaults to the first available player.
         """
+        if global_mode is None:
+            global_mode = not requested_playername
         playernames = find_players()
         # Selection Logic:
             # 1. If there is no avaiable mpris complaint player, return empty State.
@@ -69,17 +92,20 @@ class LyricsManager:
         if requested_playername:
               if requested_playername in playernames:
                   current_playername = requested_playername
-              elif requested_playername == 'lx-music-desktop':
+              elif requested_playername in ('lx-music-desktop', 'open-orpheus'):
                  for playername in playernames:
                      player = MprisPlayer(playername)
-                     if player.obj and player.identity == 'lx-music-desktop':
+                     matches = (player.identity == 'lx-music-desktop'
+                                if requested_playername == 'lx-music-desktop'
+                                else is_open_orpheus(playername, player.identity))
+                     if player.obj and matches:
                          current_playername = playername
                          current_playerobj = player
                          break
                  else:
-                    return self._get_empty_state()
+                    return set_free()
               else:
-                return self._get_empty_state()
+                return set_free()
         else:
             # Global mode: find the best player
             # If we have a current player, check if it's still valid
@@ -124,23 +150,24 @@ class LyricsManager:
             identity = current_playerobj.identity
         except Exception:
             return set_free()
-        track_changed = (self.title != track_info['title']
-                or self.artist != track_info['artist']
-                or self.album != track_info['album'])
-        if track_changed:
+        track_key = self._lyrics_key(current_playername, track_info, global_mode)
+        track_changed = self._track_key != track_key
+        retry = (is_open_orpheus(current_playername, identity) and not self.lyrics
+                 and time.monotonic() >= self._retry_at)
+        if track_changed or retry:
+            self._track_key = track_key
+            self._fetch_id += 1
+            self._retry_at = time.monotonic() + 30
             self.title = track_info['title']
             self.artist = track_info['artist']
             self.album = track_info['album']
             # Check if this player has cached lyrics for current track
             cached = self.lyrics_cache.get(current_playername)
-            if (cached and cached['title'] == track_info['title']
-                    and cached['artist'] == track_info['artist']
-                    and cached['album'] == track_info['album']):
+            if cached and cached['key'] == track_key:
                 self.lyrics = cached['lyrics']
             else:
                 self.lyrics = None
-                self._fetch_id += 1
-                threading.Thread(target=self._fetch_lyrics, args=(current_playername, identity, track_info, self._fetch_id, lxmusic_port), daemon=True).start()
+                threading.Thread(target=self._fetch_lyrics, args=(current_playername, identity, track_info, self._fetch_id, lxmusic_port, global_mode), daemon=True).start()
         self.position_ms = position
         current_lyric = self._get_current_lyric()
         self.setup(
@@ -160,7 +187,12 @@ class LyricsManager:
         return self.get_state()
 
 
-    def _fetch_lyrics(self, playername, identity, track_info, fetch_id, lxmusic_port=23330):
+    @staticmethod
+    def _lyrics_key(playername, track_info, global_mode=False):
+        return (global_mode, playername, track_info.get('track_id', ''), track_info['title'],
+                tuple(track_info['artist']), track_info['album'], track_info['url'])
+
+    def _fetch_lyrics(self, playername, identity, track_info, fetch_id, lxmusic_port=23330, global_mode=False):
         # Check if this fetch is still current
         if self._fetch_id != fetch_id:
             return
@@ -170,11 +202,15 @@ class LyricsManager:
         album = track_info['album']
         length = track_info['length']
         url = track_info['url']
-        if not title or not artists:
+        if (global_mode or not is_open_orpheus(playername, identity)) and (not title or not artists):
             return
         try:
             lyrics = None
-            if playername == 'org.mpris.MediaPlayer2.yesplaymusic':
+            if global_mode:
+                lyrics = self._fetch_lyrics_lrclib(title, artist, album, length)
+            elif is_open_orpheus(playername, identity):
+                lyrics = self._fetch_lyrics_open_orpheus(track_info)
+            elif playername == 'org.mpris.MediaPlayer2.yesplaymusic':
                 lyrics = self._fetch_lyrics_ypm(title)
             elif identity == 'lx-music-desktop':
                 lyrics = self._fetch_lyrics_lxmusic(lxmusic_port)
@@ -190,9 +226,7 @@ class LyricsManager:
                 self.lyrics = lyrics
                 if lyrics:
                     self.lyrics_cache[playername] = {
-                        'title': title,
-                        'artist': artists,
-                        'album': album,
+                        'key': self._lyrics_key(playername, track_info, global_mode),
                         'lyrics': lyrics
                     }
         except Exception as e:
@@ -207,6 +241,25 @@ class LyricsManager:
                 return resp.status, resp.read().decode('utf-8')
         except Exception:
             return None, None
+
+    def _fetch_lyrics_open_orpheus(self, track_info):
+        song_id = open_orpheus_song_id(track_info)
+        if song_id is None:
+            return None
+        params = urlencode({'id': song_id, 'os': 'pc', 'lv': -1, 'kv': -1,
+                            'tv': -1, 'yv': -1, 'rv': -1})
+        status, text = self._http_get(f'https://music.163.com/api/song/lyric?{params}')
+        if status != 200 or not text:
+            return None
+        try:
+            data = json.loads(text)
+            if not isinstance(data, dict) or data.get('code') != 200:
+                return None
+            lrc = data.get('lrc')
+            lyric = lrc.get('lyric') if isinstance(lrc, dict) else None
+            return self._parse_lrc(lyric) if isinstance(lyric, str) else None
+        except (ValueError, TypeError):
+            return None
 
     def _fetch_lyrics_ypm(self, title):
         """Fetch lyrics from YesPlayMusic localhost API. Returns parsed lyrics or None."""

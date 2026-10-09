@@ -32,9 +32,21 @@ PluginSettings {
             { label: "Global Mode", value: "global" },
             { label: "YesPlayMusic", value: "yesplaymusic" },
             { label: "Spotify", value: "spotify" },
-            { label: "LX Music", value: "lxmusic" }
+            { label: "LX Music", value: "lxmusic" },
+            { label: "Open Orpheus", value: "open-orpheus" }
         ]
         defaultValue: "global"
+    }
+
+    SelectionSetting {
+        settingKey: "openOrpheusInstallation"
+        label: "Open Orpheus Installation"
+        description: "Select how Open Orpheus is installed"
+        options: [
+            { label: "Native", value: "native" },
+            { label: "Flatpak", value: "flatpak" }
+        ]
+        defaultValue: "native"
     }
 
     // Text Settings
